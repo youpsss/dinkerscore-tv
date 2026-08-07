@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DinkerScore TV</title>
+  <script src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+  <style>
+    :root{font-family:Arial,Helvetica,sans-serif;color:#f5f7fa;background:#06111e}
+    *{box-sizing:border-box} body{margin:0;min-height:100vh;background:linear-gradient(180deg,#0a1e31,#06111e);display:grid;place-items:center}
+    .wrap{width:min(92vw,1500px);text-align:center}.brand{font-size:3vw;font-weight:900;letter-spacing:.12em;color:#ffc400;margin-bottom:3vh}
+    .teams{display:grid;grid-template-columns:1fr auto 1fr;gap:3vw;align-items:center}.team{font-size:3.1vw;font-weight:800}.score{font-size:12vw;line-height:1;font-weight:1000;color:#fff}
+    .dash{font-size:6vw;color:#ffc400}.meta{margin-top:4vh;font-size:2.2vw;color:#aab7c4}.server{color:#ffc400;font-weight:800}.winner{margin-top:4vh;font-size:4vw;font-weight:1000;color:#ffc400;display:none}
+    .sets{margin-top:2vh;font-size:2vw}.hint{position:fixed;bottom:3vh;font-size:1.2vw;color:#6f8293}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="brand">DINKERSCORE</div>
+    <div class="teams"><div id="teamA" class="team">ÉQUIPE A</div><div></div><div id="teamB" class="team">ÉQUIPE B</div></div>
+    <div class="teams"><div id="scoreA" class="score">0</div><div class="dash">—</div><div id="scoreB" class="score">0</div></div>
+    <div id="sets" class="sets">Sets : 0 — 0</div>
+    <div id="meta" class="meta"><span class="server">Service</span> : Équipe A</div>
+    <div id="winner" class="winner"></div>
+  </main>
+  <div class="hint">DinkerScore • by The Place To Dink</div>
+<script>
+const NS='urn:x-cast:fr.theplacetodink.dinkerscore.scoreboard';
+const ctx=cast.framework.CastReceiverContext.getInstance();
+ctx.addCustomMessageListener(NS, event => {
+  let d=event.data; if(typeof d==='string'){try{d=JSON.parse(d)}catch(e){return}}
+  if(!d || d.type!=='score') return;
+  teamA.textContent=d.teamA||'Équipe A'; teamB.textContent=d.teamB||'Équipe B';
+  scoreA.textContent=d.scoreA??0; scoreB.textContent=d.scoreB??0;
+  sets.textContent=`Sets : ${d.setsA??0} — ${d.setsB??0}`;
+  const serving=(d.servingTeam===1?(d.teamB||'Équipe B'):(d.teamA||'Équipe A'));
+  meta.innerHTML=`<span class="server">Service</span> : ${serving} • Serveur ${d.serverNumber??1}`;
+  if(d.winner){winner.style.display='block'; winner.textContent=`🏆 ${d.winner} remporte le match !`} else {winner.style.display='none';winner.textContent=''}
+});
+ctx.start({disableIdleTimeout:true});
+</script>
+</body>
+</html>
