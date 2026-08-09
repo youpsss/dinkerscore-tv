@@ -14,7 +14,8 @@
     .board{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:3vw;align-items:stretch}
     .team-card{position:relative;background:linear-gradient(180deg,rgba(14,42,66,.96),rgba(7,24,39,.96));border:6px solid rgba(142,164,181,.26);border-radius:34px;padding:2.2vh 2vw 2.7vh;min-height:44vh;display:flex;flex-direction:column;justify-content:center;transition:border-color .25s,box-shadow .25s,transform .25s}
     .team-card.serving{border-color:var(--gold);box-shadow:0 0 0 4px rgba(255,196,0,.12),0 0 44px rgba(255,196,0,.28);transform:translateY(-4px)}
-    .team-name{font-size:3.0vw;font-weight:900;line-height:1.1;min-height:3.4vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .team-label{font-size:1.45vw;font-weight:1000;letter-spacing:.16em;color:var(--gold);text-transform:uppercase;min-height:1.8vw;margin-bottom:.8vh;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .team-name{font-size:2.45vw;font-weight:900;line-height:1.12;min-height:2.9vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#f5f7fa}
     .score{font-size:13vw;line-height:.92;font-weight:1000;color:#fff;margin:2vh 0 1vh;text-shadow:0 7px 24px rgba(0,0,0,.35)}
     .service-pill{display:inline-flex;align-self:center;align-items:center;gap:.65vw;min-height:3.2vw;padding:.45vw 1.3vw;border-radius:999px;background:transparent;color:transparent;border:2px solid transparent;font-size:1.45vw;font-weight:1000;letter-spacing:.12em;transition:all .2s}
     .serving .service-pill{background:var(--gold);color:#071827;border-color:var(--gold)}
@@ -39,13 +40,15 @@
     <div class="title">TABLEAU D’AFFICHAGE</div>
     <section class="board">
       <article id="cardA" class="team-card serving">
-        <div id="teamA" class="team-name">ÉQUIPE A</div>
+        <div id="teamNameA" class="team-label">ÉQUIPE A</div>
+        <div id="playersA" class="team-name">Joueurs A</div>
         <div id="scoreA" class="score">0</div>
         <div class="service-pill"><span class="service-dot"></span>SERVICE</div>
         <div id="serverA" class="server-number">Serveur 1</div>
       </article>
       <article id="cardB" class="team-card">
-        <div id="teamB" class="team-name">ÉQUIPE B</div>
+        <div id="teamNameB" class="team-label">ÉQUIPE B</div>
+        <div id="playersB" class="team-name">Joueurs B</div>
         <div id="scoreB" class="score">0</div>
         <div class="service-pill"><span class="service-dot"></span>SERVICE</div>
         <div id="serverB" class="server-number"></div>
@@ -72,7 +75,7 @@ function setServing(team,serverNumber){
 ctx.addCustomMessageListener(NS,event=>{
   let d=event.data;if(typeof d==='string'){try{d=JSON.parse(d)}catch(e){return}}
   if(!d||d.type!=='score')return;
-  teamA.textContent=d.teamA||'Équipe A';teamB.textContent=d.teamB||'Équipe B';
+  teamNameA.textContent=d.teamNameA||'Équipe A';teamNameB.textContent=d.teamNameB||'Équipe B';playersA.textContent=d.playersA||d.teamA||'Joueurs A';playersB.textContent=d.playersB||d.teamB||'Joueurs B';
   scoreA.textContent=d.scoreA??0;scoreB.textContent=d.scoreB??0;
   sets.innerHTML=`<strong>SETS</strong> &nbsp; ${d.setsA??0} — ${d.setsB??0}`;
   setServing(d.servingTeam===1?1:0,d.serverNumber??1);
