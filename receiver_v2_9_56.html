@@ -51,6 +51,15 @@
     @keyframes trophyGlow{from{filter:drop-shadow(0 0 10px rgba(255,196,0,.25))}to{filter:drop-shadow(0 0 42px rgba(255,196,0,.85))}}
     @keyframes confettiFall{0%{transform:translateY(-10vh) rotate(0);opacity:1}100%{transform:translateY(118vh) rotate(720deg);opacity:.75}}
 
+    /* Phase finale multi-épreuves V3.3 */
+    .bracket-screen{position:fixed;inset:0;z-index:28;display:none;background:radial-gradient(circle at 50% 12%,#173b5d 0,#081b2c 46%,#030a11 100%);padding:2.2vh 2vw;color:#fff;overflow:hidden}
+    .bracket-screen.active{display:flex;flex-direction:column}
+    .br-header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:2px solid rgba(255,196,0,.35);padding-bottom:1vh}
+    .br-title{font-size:2.25vw;font-weight:1000;text-align:center;color:var(--gold)} .br-live{text-align:right;color:var(--gold);font-weight:1000}
+    .br-body{flex:1;min-height:0;display:grid;grid-template-columns:2.1fr .9fr;gap:1vw;padding-top:1.2vh}
+    .br-tree-panel,.br-finals-panel{min-height:0;border:2px solid rgba(142,164,181,.24);border-radius:20px;background:linear-gradient(180deg,rgba(14,42,66,.96),rgba(7,24,39,.96));padding:1vh 1vw;overflow:hidden}
+    .br-event{font-size:1.3vw;font-weight:1000;color:var(--gold);margin-bottom:.6vh}.br-tree{display:grid;grid-template-columns:repeat(3,1fr);gap:1vw;height:calc(100% - 2.2vw);align-items:stretch}.br-col{display:flex;flex-direction:column;justify-content:space-around;gap:.6vh}.br-col-title{text-align:center;color:#91a5b7;font-size:.9vw;font-weight:900;letter-spacing:.1em}.br-match{border:1px solid rgba(255,196,0,.32);background:rgba(0,0,0,.17);border-radius:12px;padding:.55vh .55vw;font-size:.92vw;line-height:1.28}.br-match.playing{border-color:var(--gold);box-shadow:0 0 20px rgba(255,196,0,.16)}.br-match .court{color:var(--gold);font-weight:1000;font-size:.82vw}.br-match .scoreline{font-weight:900}.br-tabs{display:flex;gap:.5vw;margin-bottom:.5vh;flex-wrap:wrap}.br-chip{font-size:.75vw;border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:.25vh .5vw;color:#cbd6df}.br-chip.active{border-color:var(--gold);color:var(--gold)}
+    .multi-finals{display:flex;flex-direction:column;gap:.75vh}.multi-final-card{border:2px solid var(--gold);border-radius:14px;padding:.7vh .7vw;background:rgba(255,196,0,.06)}.multi-final-event{font-size:.9vw;color:var(--gold);font-weight:1000}.multi-final-court{font-size:.78vw;color:#a9bbc9}.multi-final-teams{display:grid;grid-template-columns:1fr auto 1fr;gap:.5vw;align-items:center;font-size:.92vw;font-weight:900}.multi-final-score{font-size:1.55vw;color:#fff;font-weight:1000}.br-page{font-size:.85vw;color:#9db0bf;text-align:center;margin-top:.5vh}
     /* Mode capture : le bouton n'apparait que si l'URL contient ?capture=1 */
     .capture-btn{position:fixed;top:18px;right:18px;z-index:50;display:none;align-items:center;gap:10px;padding:12px 18px;border:2px solid var(--gold);border-radius:999px;background:rgba(6,17,30,.88);color:#fff;font:800 15px Arial,Helvetica,sans-serif;letter-spacing:.05em;cursor:pointer;box-shadow:0 8px 28px rgba(0,0,0,.35);backdrop-filter:blur(8px)}
     .capture-btn:hover{background:var(--gold);color:#071827}
@@ -123,6 +132,14 @@
       <article class="tl-panel"><h2>🏁 TABLEAU FINAL</h2><div id="tlBracket" class="tl-bracket"></div></article>
     </section>
     <footer class="tl-footer"><span id="tlFooterLeft">DinkerScore • Tournoi Live</span><span id="tlUpdated"></span></footer>
+  </main>
+
+  <main id="bracketScreen" class="bracket-screen">
+    <header class="br-header"><div class="final-brand">DINKER<span>SCORE</span></div><div id="brTitle" class="br-title">PHASES FINALES</div><div class="br-live">● EN DIRECT</div></header>
+    <section class="br-body">
+      <article class="br-tree-panel"><div id="brEvent" class="br-event"></div><div id="brTabs" class="br-tabs"></div><div id="brTree" class="br-tree"></div><div id="brPage" class="br-page"></div></article>
+      <aside class="br-finals-panel"><h2 style="margin:0 0 .8vh;color:var(--gold);font-size:1.25vw">🏆 FINALES EN DIRECT</h2><div id="multiFinals" class="multi-finals"></div></aside>
+    </section>
   </main>
 
   <main id="finalScreen" class="final-screen">
@@ -285,6 +302,25 @@ function startTournamentPoolRotation(pools){
 }
 
 
+let bracketEventPage=0, bracketTimer=null;
+function stopBracketRotation(){if(bracketTimer){clearInterval(bracketTimer);bracketTimer=null;}}
+function phaseBucket(m){const p=String(m.phase||'').toLowerCase();if(p.includes('quart'))return 'QUARTS';if(p.includes('demi'))return 'DEMIES';if(p.includes('final'))return 'FINALE';return 'AUTRES';}
+function renderBracketMatch(m){const st=String(m.status||'UPCOMING').toUpperCase();const cls=st==='PLAYING'?' playing':'';const score=st==='PLAYING'||st==='FINISHED'?`<div class="scoreline">${esc(m.teamA||'À déterminer')} <strong>${esc(m.scoreA??0)}</strong> — <strong>${esc(m.scoreB??0)}</strong> ${esc(m.teamB||'À déterminer')}</div>`:`<div class="scoreline">${esc(m.teamA||'À déterminer')} — ${esc(m.teamB||'À déterminer')}</div>`;return `<div class="br-match${cls}"><div class="court">Terrain ${esc(m.court||'-')} • ${esc(m.bracket==='LOWER'?'Tableau bas':'Tableau haut')}</div>${score}</div>`;}
+function renderMultiFinals(d){const el=document.getElementById('multiFinals');if(!el)return;const live=Array.isArray(d.liveFinals)?d.liveFinals:[];el.innerHTML=live.length?live.map(m=>`<div class="multi-final-card"><div class="multi-final-event">${esc(m.event||'Finale')}</div><div class="multi-final-court">Terrain ${esc(m.court||'-')}</div><div class="multi-final-teams"><div>${esc(m.teamA||'')}</div><div class="multi-final-score">${esc(m.scoreA??0)} — ${esc(m.scoreB??0)}</div><div style="text-align:right">${esc(m.teamB||'')}</div></div></div>`).join(''):'<div class="tl-empty">Aucune finale en cours pour le moment.</div>';}
+function showBracketScreen(d){
+  updateJourneyQr(d);hideSpecialTournamentScreens();document.body.classList.remove('tournament-mode');const screen=document.getElementById('bracketScreen');if(screen)screen.classList.add('active');winner.style.display='none';
+  const all=Array.isArray(d.bracket)?d.bracket:[];const events=[...new Set(all.map(m=>m.event||'Épreuve principale'))];if(!events.length){showTournamentScreen({...d,displayMode:'TOURNAMENT'});return;}
+  bracketEventPage=((bracketEventPage%events.length)+events.length)%events.length;const eventName=events[bracketEventPage];const em=all.filter(m=>(m.event||'Épreuve principale')===eventName);
+  const brTitle=document.getElementById('brTitle'),brEvent=document.getElementById('brEvent'),brTabs=document.getElementById('brTabs'),brTree=document.getElementById('brTree'),brPage=document.getElementById('brPage');
+  if(brTitle)brTitle.textContent=`PHASES FINALES • ${d.kLevel||'K25'}`;if(brEvent)brEvent.textContent=eventName;
+  const upper=em.filter(m=>String(m.bracket||'').toUpperCase()!=='LOWER');const lower=em.filter(m=>String(m.bracket||'').toUpperCase()==='LOWER');const chosen=upper.length?upper:lower;
+  if(brTabs)brTabs.innerHTML=`<span class="br-chip active">TABLEAU HAUT</span>${lower.length?'<span class="br-chip">TABLEAU BAS</span>':''}`;
+  const q=chosen.filter(m=>phaseBucket(m)==='QUARTS'),se=chosen.filter(m=>phaseBucket(m)==='DEMIES'),f=chosen.filter(m=>phaseBucket(m)==='FINALE');
+  if(brTree)brTree.innerHTML=`<div class="br-col"><div class="br-col-title">QUARTS</div>${q.length?q.map(renderBracketMatch).join(''):'<div class="tl-empty">—</div>'}</div><div class="br-col"><div class="br-col-title">DEMIES</div>${se.length?se.map(renderBracketMatch).join(''):'<div class="tl-empty">—</div>'}</div><div class="br-col"><div class="br-col-title">FINALE</div>${f.length?f.map(renderBracketMatch).join(''):'<div class="tl-empty">—</div>'}</div>`;
+  if(brPage)brPage.textContent=events.length>1?`Épreuve ${bracketEventPage+1} / ${events.length}`:'';renderMultiFinals(d);
+  stopBracketRotation();if(events.length>1)bracketTimer=setInterval(()=>{bracketEventPage++;showBracketScreen(d);},10000);
+}
+
 function updateJourneyQr(d){
   const card=document.getElementById('journeyQrCard');
   const box=document.getElementById('journeyQrCode');
@@ -308,15 +344,12 @@ function showTournamentScreen(d){
   const fm=findFinalMatch(d);
   const requestedMode=String(d.displayMode||'').toUpperCase();
 
-  // V2.9.31 : l'application Android impose maintenant explicitement
-  // l'écran TV. On ne dépend plus d'une déduction fragile basée sur le
-  // texte de la phase ou uniquement sur le statut du match.
+  // V3.3 : après les poules, affichage d'un vrai tableau multi-épreuves.
+  // Plusieurs finales peuvent être jouées simultanément : aucune finale unique
+  // ne monopolise plus l'écran TV.
+  if(requestedMode==='BRACKETS'){showBracketScreen(d);return;}
   if(requestedMode==='CHAMPION' && fm){showChampionScreen(d,fm);return;}
   if(requestedMode==='FINAL' && fm){showFinalScreen(d,fm);return;}
-
-  // Compatibilité avec les anciennes versions Android.
-  if(fm && String(fm.status||'').toUpperCase()==='FINISHED'){showChampionScreen(d,fm);return;}
-  if(fm){showFinalScreen(d,fm);return;}
   hideSpecialTournamentScreens();document.body.classList.add('tournament-mode'); winner.style.display='none';
   tlTournamentName.textContent=(d.tournamentName||'TOURNOI LIVE')+' • '+(d.kLevel||'K25');
   const current=Array.isArray(d.currentMatches)?d.currentMatches:[];
@@ -334,7 +367,7 @@ function showTournamentScreen(d){
   startTournamentProgramRotation(allMatches);
   const bracket=Array.isArray(d.bracket)?d.bracket:[];
   tlBracket.innerHTML=bracket.length?bracket.map(b=>`<div><strong>${esc(b.bracket==='LOWER'?'TABLEAU BAS':b.bracket==='UPPER'?'TABLEAU HAUT':b.phase||b.round||'')}</strong> • ${esc(b.event?b.event+' • ':'')}${esc(b.teamA||'')} vs ${esc(b.teamB||'')} • ${esc(b.bestOfSets||1)} set(s) × ${esc(b.pointsPerSet||d.pointsToWin||11)} pts</div>`).join(''):'<div>Les tableaux haut et bas apparaîtront ici automatiquement.</div>';
-  tlFooterLeft.textContent=(d.location?`${d.tournamentName||'Tournoi'} • ${d.location}`:'DinkerScore • Tournoi Live')+' • '+(d.kLevel||'K25')+' • TV 2.9.63';
+  tlFooterLeft.textContent=(d.location?`${d.tournamentName||'Tournoi'} • ${d.location}`:'DinkerScore • Tournoi Live')+' • '+(d.kLevel||'K25')+' • TV 3.3';
   tlUpdated.textContent='Mis à jour : '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 }
 ctx.addCustomMessageListener(NS,event=>{
