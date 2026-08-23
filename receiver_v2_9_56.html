@@ -93,7 +93,14 @@
   
     /* V2.9.63 : QR gratuit vers le parcours personnel du joueur. */
     .journey-qr{position:fixed;right:1.5vw;bottom:1.4vh;z-index:45;display:none;grid-template-columns:auto 1fr;align-items:center;gap:.7vw;padding:.65vh .65vw;background:rgba(255,255,255,.96);color:#071827;border:3px solid var(--gold);border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,.35);text-align:left}
-    .journey-qr.visible{display:grid}.journey-qr-code{width:6.2vw;height:6.2vw;display:grid;place-items:center;background:#fff;overflow:hidden}.journey-qr-code img,.journey-qr-code canvas{width:100%!important;height:100%!important}.journey-qr-title{font-size:.78vw;font-weight:1000;color:#071827;line-height:1.1;max-width:9.5vw}.journey-qr-sub{font-size:.62vw;font-weight:800;color:#4c5d6a;margin-top:.3vh;max-width:9.5vw}.journey-qr-code-text{font-size:.66vw;font-weight:1000;color:#071827;margin-top:.35vh;letter-spacing:.05em}
+    .journey-qr.visible{display:grid}.journey-qr-code{width:7.8vw;height:7.8vw;display:grid;place-items:center;background:#fff;overflow:hidden}.journey-qr-code img,.journey-qr-code canvas{width:100%!important;height:100%!important}.journey-qr-title{font-size:.78vw;font-weight:1000;color:#071827;line-height:1.1;max-width:9.5vw}.journey-qr-sub{font-size:.62vw;font-weight:800;color:#4c5d6a;margin-top:.3vh;max-width:9.5vw}.journey-qr-code-text{font-size:.66vw;font-weight:1000;color:#071827;margin-top:.35vh;letter-spacing:.05em}
+  
+    /* V3.3 CARROUSEL TV : une information majeure par écran, rotation toutes les 8 secondes. */
+    .carousel-screen{position:fixed;inset:0;z-index:25;display:none;background:linear-gradient(180deg,#061624 0,#020a11 100%);color:#fff;padding:3.2vh 3.4vw 4.4vh;grid-template-rows:auto 1fr auto;gap:2vh}
+    .carousel-screen.active{display:grid}
+    .cv-head{display:grid;grid-template-columns:1fr auto;align-items:end;border-bottom:2px solid rgba(255,204,0,.55);padding-bottom:1.4vh}.cv-title{font-size:2.2vw;font-weight:1000;color:#ffcc00}.cv-sub{font-size:1.15vw;font-weight:900;color:#c9d7e4;margin-top:.45vh}.cv-page{font-size:.95vw;font-weight:900;color:#9db3c7}
+    .cv-body{min-height:0;overflow:hidden}.cv-grid{height:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.3vw}.cv-grid.four{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}.cv-card{min-width:0;background:#0c263d;border:2px solid #294c68;border-radius:18px;padding:1.45vh 1.25vw;display:grid;align-content:start;gap:.7vh}.cv-card.live{border-color:#ffcc00;box-shadow:0 0 0 2px rgba(255,204,0,.12) inset}.cv-kicker{font-size:.85vw;font-weight:1000;color:#ffcc00;text-transform:uppercase;letter-spacing:.04em}.cv-event{font-size:1.05vw;font-weight:950;color:#d9e8f5}.cv-player{font-size:1.55vw;font-weight:1000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cv-score{font-size:3.3vw;font-weight:1000;line-height:1;color:#ffcc00;text-align:center}.cv-score.blue{color:#58a6ff}.cv-versus{display:grid;grid-template-columns:1fr auto 1fr;gap:1vw;align-items:center}.cv-status{font-size:.82vw;color:#9db3c7;font-weight:800}.cv-list{display:grid;gap:.75vh}.cv-row{display:grid;grid-template-columns:6.3vw 1fr 7.5vw;gap:1vw;align-items:center;background:#0c263d;border:1px solid #264760;border-radius:13px;padding:1vh 1vw}.cv-row .terrain{font-size:1.05vw;font-weight:1000;color:#ffcc00}.cv-row .who{font-size:1.05vw;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cv-row .result{font-size:1.25vw;font-weight:1000;text-align:center}.cv-pool{background:#0c263d;border:2px solid #294c68;border-radius:18px;padding:1.4vh 1.2vw;overflow:hidden}.cv-pool-title{display:flex;justify-content:space-between;gap:1vw;font-size:1.2vw;font-weight:1000;color:#ffcc00;margin-bottom:.8vh}.cv-rank{display:grid;grid-template-columns:3vw 1fr 4vw 4vw 5vw;gap:.4vw;padding:.58vh .35vw;border-top:1px solid rgba(255,255,255,.08);font-size:.92vw;font-weight:850}.cv-rank.head{color:#9db3c7;font-size:.72vw;border-top:0}.cv-bracket{height:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.2vw;align-items:stretch}.cv-round{display:grid;grid-template-rows:auto 1fr;min-width:0}.cv-round-title{text-align:center;background:#ffcc00;color:#061624;font-size:1vw;font-weight:1000;border-radius:10px;padding:.65vh}.cv-round-list{display:grid;align-content:space-evenly;gap:1vh;padding:.5vh}.cv-br-match{background:#0c263d;border:1px solid #315675;border-radius:11px;padding:.8vh .8vw}.cv-br-meta{font-size:.66vw;color:#9db3c7;font-weight:850}.cv-br-line{display:grid;grid-template-columns:1fr auto;gap:.6vw;font-size:.88vw;font-weight:950;margin-top:.25vh}.cv-footer{display:flex;justify-content:space-between;align-items:center;color:#87a4bd;font-size:.78vw;font-weight:850;padding-right:17vw}.cv-dots{letter-spacing:.25em;color:#ffcc00}.journey-qr.pending .journey-qr-code{display:none}.journey-qr.pending{display:grid}.journey-qr.pending .journey-qr-title{font-size:.8vw}.journey-qr.pending .journey-qr-sub{max-width:12vw}
+
   </style>
 </head>
 <body>
@@ -163,6 +170,13 @@
     </div>
   </main>
 
+
+  <main id="carouselScreen" class="carousel-screen" aria-label="Carrousel tournoi DinkerScore">
+    <header class="cv-head"><div><div id="cvTitle" class="cv-title">TOURNOI LIVE</div><div id="cvSub" class="cv-sub"></div></div><div id="cvPage" class="cv-page"></div></header>
+    <section id="cvBody" class="cv-body"></section>
+    <footer class="cv-footer"><div id="cvFooter">DinkerScore • Scorez, Annoncez, Gagnez</div><div id="cvDots" class="cv-dots">● ○ ○</div></footer>
+  </main>
+
   <aside id="journeyQrCard" class="journey-qr" aria-label="QR code parcours personnel joueur">
     <div id="journeyQrCode" class="journey-qr-code"></div>
     <div><div class="journey-qr-title">📱 MON PARCOURS GRATUIT</div><div class="journey-qr-sub">Scanne pour voir tes matchs, ton terrain et ton classement en direct.</div><div id="journeyQrCodeText" class="journey-qr-code-text"></div></div>
@@ -193,6 +207,8 @@ function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 function hideSpecialTournamentScreens(){
   finalScreen.classList.remove('active');
   championScreen.classList.remove('active');
+  const cs=document.getElementById('carouselScreen');if(cs)cs.classList.remove('active');
+  stopCarousel();
 }
 function showScoreScreen(){hideSpecialTournamentScreens();document.body.classList.remove('tournament-mode')}
 function findFinalMatch(d){
@@ -321,6 +337,20 @@ function showBracketScreen(d){
   stopBracketRotation();if(events.length>1)bracketTimer=setInterval(()=>{bracketEventPage++;showBracketScreen(d);},10000);
 }
 
+
+let carouselTimer=null, carouselIndex=0, carouselSlides=[], latestTournamentData=null;
+function stopCarousel(){if(carouselTimer){clearInterval(carouselTimer);carouselTimer=null;}}
+function chunks(arr,n){const out=[];for(let i=0;i<arr.length;i+=n)out.push(arr.slice(i,i+n));return out;}
+function eventLabel(m){return esc(m.event||'Épreuve principale')}
+function scorePair(m){return `${esc(m.scoreA??0)} — ${esc(m.scoreB??0)}`}
+function matchCard(m){return `<div class="cv-card ${String(m.status||'').toUpperCase()==='PLAYING'?'live':''}"><div class="cv-kicker">TERRAIN ${esc(m.court||'-')} • ${esc(m.phase||m.pool||'MATCH')}</div><div class="cv-event">${eventLabel(m)}</div><div class="cv-versus"><div><div class="cv-player">${esc(m.teamA||'À déterminer')}</div></div><div class="cv-score">${esc(m.scoreA??0)}</div><div style="text-align:right"><div class="cv-player">${esc(m.teamB||'À déterminer')}</div></div></div><div class="cv-status">${esc(m.bestOfSets||1)} set(s) • ${esc(m.pointsPerSet||11)} pts${m.pool?' • Poule '+esc(m.pool):''}</div></div>`}
+function poolCard(p){const rows=Array.isArray(p.rows)?p.rows:[];return `<div class="cv-pool"><div class="cv-pool-title"><span>${esc(p.event? p.event+' • ':'')}${esc(p.pool||'POULE')}</span><span>${rows.length} participants</span></div><div class="cv-rank head"><div>#</div><div>JOUEUR / ÉQUIPE</div><div>MJ</div><div>V</div><div>+/-</div></div>${rows.map(r=>`<div class="cv-rank"><div>${esc(r.position||'')}</div><div>${esc(r.name||'')}</div><div>${esc(r.played??0)}</div><div>${esc(r.wins??0)}</div><div>${esc(r.difference??0)}</div></div>`).join('')}</div>`}
+function rowsSlide(title,sub,items){return {title,sub,html:`<div class="cv-list">${items.map(m=>`<div class="cv-row"><div class="terrain">Terrain ${esc(m.court||'-')}</div><div class="who"><strong>${eventLabel(m)}</strong> • ${esc(m.teamA||'')} vs ${esc(m.teamB||'')}</div><div class="result">${String(m.status||'').toUpperCase()==='FINISHED'?scorePair(m):String(m.status||'').toUpperCase()==='PLAYING'?scorePair(m):'À venir'}</div></div>`).join('')}</div>`}}
+function bracketSlide(eventName,kind,matches){const pick=matches.filter(m=>String(m.bracket||'').toUpperCase()===kind);if(!pick.length)return null;const group=b=>pick.filter(m=>phaseBucket(m)===b);const col=(name,arr)=>`<div class="cv-round"><div class="cv-round-title">${name}</div><div class="cv-round-list">${arr.length?arr.map(m=>`<div class="cv-br-match"><div class="cv-br-meta">Terrain ${esc(m.court||'-')}</div><div class="cv-br-line"><span>${esc(m.teamA||'À déterminer')}</span><strong>${esc(m.scoreA??0)}</strong></div><div class="cv-br-line"><span>${esc(m.teamB||'À déterminer')}</span><strong>${esc(m.scoreB??0)}</strong></div></div>`).join(''):'<div class="cv-br-match">À venir</div>'}</div></div>`;return {title:`${kind==='LOWER'?'TABLEAU BAS':'TABLEAU HAUT'} • ${eventName}`,sub:'Phases finales',html:`<div class="cv-bracket">${col('QUARTS',group('QUARTS'))}${col('DEMIES',group('DEMIES'))}${col('FINALE',group('FINALE'))}</div>`}}
+function buildCarouselSlides(d){const slides=[];const pools=Array.isArray(d.poolRankings)?d.poolRankings:[];chunks(pools,2).forEach((g,i)=>slides.push({title:'CLASSEMENTS DES POULES',sub:`${d.tournamentName||'Tournoi'} • ${d.kLevel||''} • Groupe ${i+1}`,html:`<div class="cv-grid">${g.map(poolCard).join('')}</div>`}));const current=Array.isArray(d.currentMatches)?d.currentMatches:[];chunks(current,4).forEach((g,i)=>slides.push({title:'MATCHS EN COURS',sub:`Résultats en direct • Terrains ${i*4+1} à ${i*4+g.length}`,html:`<div class="cv-grid four">${g.map(matchCard).join('')}</div>`}));const all=Array.isArray(d.allMatches)?d.allMatches:[];const finished=all.filter(m=>String(m.status||'').toUpperCase()==='FINISHED').slice(-12).reverse();chunks(finished,6).forEach((g,i)=>slides.push(rowsSlide('DERNIERS RÉSULTATS',`Page ${i+1}`,g)));const upcoming=all.filter(m=>String(m.status||'').toUpperCase()!=='FINISHED'&&String(m.status||'').toUpperCase()!=='PLAYING').slice(0,12);chunks(upcoming,6).forEach((g,i)=>slides.push(rowsSlide('PROCHAINS MATCHS',`Page ${i+1}`,g)));const events=[...new Set(all.map(m=>m.event).filter(Boolean))];events.forEach(ev=>{const em=all.filter(m=>m.event===ev);const recent=em.filter(m=>String(m.status||'').toUpperCase()==='FINISHED').slice(-6).reverse();if(recent.length)slides.push(rowsSlide(`RÉSULTATS • ${ev}`,'Résultats de cette épreuve',recent));});const bracket=Array.isArray(d.bracket)?d.bracket:[];const be=[...new Set(bracket.map(m=>m.event||'Épreuve principale'))];be.forEach(ev=>{const em=bracket.filter(m=>(m.event||'Épreuve principale')===ev);['UPPER','LOWER'].forEach(k=>{const s=bracketSlide(ev,k,em);if(s)slides.push(s);});});const finals=Array.isArray(d.liveFinals)?d.liveFinals:[];if(finals.length)chunks(finals,4).forEach(g=>slides.unshift({title:'FINALES EN DIRECT',sub:`${g.length} finale(s) simultanée(s)`,html:`<div class="cv-grid four">${g.map(matchCard).join('')}</div>`}));if(!slides.length)slides.push({title:'TOURNOI LIVE',sub:d.tournamentName||'DinkerScore',html:'<div class="cv-card"><div class="cv-player">Les informations du tournoi vont apparaître ici.</div></div>'});return slides;}
+function renderCarousel(){const s=carouselSlides[carouselIndex%carouselSlides.length];cvTitle.textContent=s.title;cvSub.textContent=s.sub||'';cvBody.innerHTML=s.html;cvPage.textContent=`Écran ${carouselIndex%carouselSlides.length+1} / ${carouselSlides.length} • 8 s`;cvFooter.textContent=`${latestTournamentData?.tournamentName||'Tournoi'} • ${latestTournamentData?.kLevel||''} • DinkerScore`;cvDots.textContent=carouselSlides.map((_,i)=>i===carouselIndex%carouselSlides.length?'●':'○').slice(0,12).join(' ');}
+function showCarouselScreen(d){latestTournamentData=d;updateJourneyQr(d);stopBracketRotation();stopTournamentProgramRotation();stopTournamentPoolRotation();hideSpecialTournamentScreens();document.body.classList.remove('tournament-mode');winner.style.display='none';const screen=document.getElementById('carouselScreen');screen.classList.add('active');carouselSlides=buildCarouselSlides(d);if(carouselIndex>=carouselSlides.length)carouselIndex=0;renderCarousel();stopCarousel();if(carouselSlides.length>1)carouselTimer=setInterval(()=>{carouselIndex=(carouselIndex+1)%carouselSlides.length;renderCarousel();},8000);}
+
 function updateJourneyQr(d){
   const card=document.getElementById('journeyQrCard');
   const box=document.getElementById('journeyQrCode');
@@ -328,15 +358,23 @@ function updateJourneyQr(d){
   if(!card||!box)return;
   const code=String(d.tournamentCode||'').trim();
   const link=String(d.viewerDeepLink||'').trim();
-  if(!code||!link){card.classList.remove('visible');box.innerHTML='';if(label)label.textContent='';return;}
   card.classList.add('visible');
+  if(!code||!link){
+    card.classList.add('pending');
+    box.innerHTML='';
+    if(label)label.textContent='QR EN PRÉPARATION';
+    const sub=card.querySelector('.journey-qr-sub');if(sub)sub.textContent='Le lien public se crée automatiquement. Il apparaîtra ici dans quelques secondes.';
+    return;
+  }
+  card.classList.remove('pending');
+  const sub=card.querySelector('.journey-qr-sub');if(sub)sub.textContent='Scanne pour voir tes matchs, ton terrain et ton classement en direct.';
   if(label)label.textContent=code;
   if(box.dataset.link===link)return;
   box.dataset.link=link;box.innerHTML='';
   try{
-    if(typeof QRCode==='function'){new QRCode(box,{text:link,width:220,height:220,colorDark:'#071827',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}
-    else box.innerHTML='<div style="font:900 11px Arial;text-align:center;padding:8px">'+esc(code)+'</div>';
-  }catch(e){box.innerHTML='<div style="font:900 11px Arial;text-align:center;padding:8px">'+esc(code)+'</div>';}
+    if(typeof QRCode==='function'){new QRCode(box,{text:link,width:260,height:260,colorDark:'#071827',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}
+    else box.innerHTML='<img alt="QR parcours joueur" src="https://api.qrserver.com/v1/create-qr-code/?size=260x260&data='+encodeURIComponent(link)+'">';
+  }catch(e){box.innerHTML='<img alt="QR parcours joueur" src="https://api.qrserver.com/v1/create-qr-code/?size=260x260&data='+encodeURIComponent(link)+'">';}
 }
 
 function showTournamentScreen(d){
@@ -347,9 +385,10 @@ function showTournamentScreen(d){
   // V3.3 : après les poules, affichage d'un vrai tableau multi-épreuves.
   // Plusieurs finales peuvent être jouées simultanément : aucune finale unique
   // ne monopolise plus l'écran TV.
-  if(requestedMode==='BRACKETS'){showBracketScreen(d);return;}
+  if(requestedMode==='BRACKETS'){showCarouselScreen(d);return;}
   if(requestedMode==='CHAMPION' && fm){showChampionScreen(d,fm);return;}
   if(requestedMode==='FINAL' && fm){showFinalScreen(d,fm);return;}
+  showCarouselScreen(d);return;
   hideSpecialTournamentScreens();document.body.classList.add('tournament-mode'); winner.style.display='none';
   tlTournamentName.textContent=(d.tournamentName||'TOURNOI LIVE')+' • '+(d.kLevel||'K25');
   const current=Array.isArray(d.currentMatches)?d.currentMatches:[];
