@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>DinkerScore TV</title>
   <script src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
     :root{font-family:Arial,Helvetica,sans-serif;color:#f5f7fa;background:#06111e;--gold:#ffc400;--navy:#06111e;--card:#0b2135}
     *{box-sizing:border-box} body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% 20%,#12334f 0,#071827 46%,#040d16 100%);display:grid;place-items:center;overflow:hidden}
@@ -72,11 +73,18 @@
     .tl-court{font-size:1.15vw;font-weight:1000;color:var(--gold)}.tl-teams{font-size:1.15vw;font-weight:800;line-height:1.25}.tl-vs{color:#91a5b7;font-size:.85vw}
     .tl-score{font-size:2vw;font-weight:1000;text-align:center}.tl-status{text-align:center;font-size:.95vw;font-weight:900;padding:.45vh .6vw;border:1px solid rgba(255,196,0,.5);border-radius:999px;color:var(--gold)}
     .tl-ranking-row{display:grid;grid-template-columns:2.6vw 1fr 3.3vw 3.3vw 4vw;gap:.4vw;padding:.58vh .4vw;border-bottom:1px solid rgba(255,255,255,.08);font-size:1vw;align-items:center}.tl-ranking-row.header{color:#91a5b7;font-size:.85vw;font-weight:800}.tl-rank-pos{font-weight:1000;color:var(--gold)}
-    .tl-pools-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75vh .7vw;align-content:start;height:calc(100% - .2vh);overflow:hidden}.tl-pool-card{min-width:0;background:rgba(0,0,0,.13);border:1px solid rgba(255,196,0,.24);border-radius:12px;padding:.45vh .45vw;overflow:hidden}.tl-pool-title{font-weight:1000;color:var(--gold);font-size:1.05vw;text-align:center;margin:.1vh 0 .3vh;letter-spacing:.08em}.tl-pool-card .tl-ranking-row{grid-template-columns:1.5vw 1fr 1.7vw 1.7vw 1.7vw 2.2vw;font-size:.80vw;padding:.35vh .2vw;gap:.18vw}.tl-pool-card .tl-ranking-row.header{font-size:.67vw}.tl-pools-grid.pools-1{grid-template-columns:1fr}.tl-pools-grid.pools-3,.tl-pools-grid.pools-4{grid-template-columns:repeat(2,minmax(0,1fr))}.tl-pools-grid.pools-many{grid-template-columns:repeat(3,minmax(0,1fr));gap:.5vh .45vw}.tl-pools-grid.pools-many .tl-pool-title{font-size:.82vw}.tl-pools-grid.pools-many .tl-pool-card .tl-ranking-row{grid-template-columns:1.1vw 1fr 1.3vw 1.3vw 1.3vw 1.65vw;font-size:.62vw;padding:.22vh .12vw}.tl-pools-grid.pools-many .tl-pool-card .tl-ranking-row.header{font-size:.55vw}
+    .tl-pools-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75vh .7vw;align-content:start;height:calc(100% - .2vh);overflow:hidden}.tl-pool-card{min-width:0;background:rgba(0,0,0,.13);border:1px solid rgba(255,196,0,.24);border-radius:12px;padding:.45vh .45vw;overflow:hidden}.tl-pool-title{font-weight:1000;color:var(--gold);font-size:1.05vw;text-align:center;margin:.1vh 0 .3vh;letter-spacing:.08em}.tl-pool-card .tl-ranking-row{grid-template-columns:1.5vw 1fr 1.7vw 1.7vw 1.7vw 2.2vw;font-size:.80vw;padding:.35vh .2vw;gap:.18vw}.tl-pool-card .tl-ranking-row.header{font-size:.67vw}.tl-pools-grid.pools-1{grid-template-columns:1fr}.tl-pools-grid.pools-3,.tl-pools-grid.pools-4{grid-template-columns:repeat(2,minmax(0,1fr))}.tl-pools-grid.pools-many{grid-template-columns:repeat(3,minmax(0,1fr));gap:.5vh .45vw}.tl-pools-grid.pools-many .tl-pool-title{font-size:.82vw}.tl-pools-grid.pools-many .tl-pool-card .tl-ranking-row{grid-template-columns:1.1vw 1fr 1.3vw 1.3vw 1.3vw 1.65vw;font-size:.62vw;padding:.22vh .12vw}.tl-pools-grid.pools-many .tl-pool-card .tl-ranking-row.header{font-size:.55vw}.tl-pool-page{font-size:.72vw;color:#91a5b7;text-align:right;margin:-.75vh 0 .25vh;font-weight:800;letter-spacing:.06em}
     .tl-upcoming{display:grid;grid-template-columns:4.5vw 6vw 1fr;gap:.6vw;padding:.75vh .5vw;border-bottom:1px solid rgba(255,255,255,.08);font-size:1vw}.tl-time{color:#91a5b7}
     .tl-bracket{height:calc(100% - 2.2vw);display:grid;place-items:center;color:#cbd6df;font-size:1.05vw;text-align:center;line-height:1.7}.tl-bracket strong{color:var(--gold)}
     .tl-footer{display:flex;justify-content:space-between;align-items:center;font-size:.9vw;color:#7f94a5;padding:0 .5vw}.tl-empty{display:grid;place-items:center;height:80%;color:#7f94a5;font-size:1.1vw}
 
+    .tl-program-head{display:flex;justify-content:space-between;align-items:center;gap:.8vw;margin-bottom:.5vh}.tl-program-page{font-size:.8vw;color:#91a5b7;font-weight:800}
+    .tl-program-row{display:grid;grid-template-columns:4.2vw 5.2vw 1fr 6.8vw;gap:.5vw;align-items:center;padding:.48vh .4vw;border-bottom:1px solid rgba(255,255,255,.08);font-size:.84vw}.tl-program-phase{color:var(--gold);font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tl-program-teams{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.tl-program-state{text-align:right;font-size:.72vw;font-weight:900;color:#b6c6d3}.tl-program-row.playing{background:rgba(255,196,0,.08);border-radius:8px}.tl-program-row.finished{opacity:.72}.tl-program-row.bye{opacity:.5}
+
+  
+    /* V2.9.63 : QR gratuit vers le parcours personnel du joueur. */
+    .journey-qr{position:fixed;right:1.5vw;bottom:1.4vh;z-index:45;display:none;grid-template-columns:auto 1fr;align-items:center;gap:.7vw;padding:.65vh .65vw;background:rgba(255,255,255,.96);color:#071827;border:3px solid var(--gold);border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,.35);text-align:left}
+    .journey-qr.visible{display:grid}.journey-qr-code{width:6.2vw;height:6.2vw;display:grid;place-items:center;background:#fff;overflow:hidden}.journey-qr-code img,.journey-qr-code canvas{width:100%!important;height:100%!important}.journey-qr-title{font-size:.78vw;font-weight:1000;color:#071827;line-height:1.1;max-width:9.5vw}.journey-qr-sub{font-size:.62vw;font-weight:800;color:#4c5d6a;margin-top:.3vh;max-width:9.5vw}.journey-qr-code-text{font-size:.66vw;font-weight:1000;color:#071827;margin-top:.35vh;letter-spacing:.05em}
   </style>
 </head>
 <body>
@@ -111,7 +119,7 @@
     <section class="tl-grid">
       <article class="tl-panel"><h2>● MATCHS EN COURS</h2><div id="tlCurrentMatches" class="tl-list"></div></article>
       <article class="tl-panel"><h2>🏆 CLASSEMENT</h2><div id="tlRanking"></div></article>
-      <article class="tl-panel"><h2>⏭ PROCHAINS MATCHS</h2><div id="tlUpcoming"></div></article>
+      <article class="tl-panel"><div class="tl-program-head"><h2>📋 PROGRAMME COMPLET</h2><span id="tlProgramPage" class="tl-program-page"></span></div><div id="tlUpcoming"></div></article>
       <article class="tl-panel"><h2>🏁 TABLEAU FINAL</h2><div id="tlBracket" class="tl-bracket"></div></article>
     </section>
     <footer class="tl-footer"><span id="tlFooterLeft">DinkerScore • Tournoi Live</span><span id="tlUpdated"></span></footer>
@@ -137,12 +145,23 @@
       <div id="championTournament" class="champion-tournament"></div>
     </div>
   </main>
+
+  <aside id="journeyQrCard" class="journey-qr" aria-label="QR code parcours personnel joueur">
+    <div id="journeyQrCode" class="journey-qr-code"></div>
+    <div><div class="journey-qr-title">📱 MON PARCOURS GRATUIT</div><div class="journey-qr-sub">Scanne pour voir tes matchs, ton terrain et ton classement en direct.</div><div id="journeyQrCodeText" class="journey-qr-code-text"></div></div>
+  </aside>
   <div class="hint">DinkerScore • Scorez, Annoncez, Gagnez</div>
   <button id="captureBtn" class="capture-btn" type="button" aria-label="Capturer l’écran DinkerScore">📸 CAPTURE PNG</button>
 <script>
 const NS='urn:x-cast:fr.theplacetodink.dinkerscore.scoreboard';
 const ctx=cast.framework.CastReceiverContext.getInstance();
 let previousServingTeam=null;
+let tournamentProgramTimer=null;
+let tournamentProgramPage=0;
+let tournamentProgramData=[];
+let tournamentPoolTimer=null;
+let tournamentPoolPage=0;
+let tournamentPoolData=[];
 function setServing(team,serverNumber){
   const a=team===0,b=team===1;
   cardA.classList.toggle('serving',a); cardB.classList.toggle('serving',b);
@@ -190,7 +209,102 @@ function showChampionScreen(d,m){
   championScore.textContent=`${m.teamA||'Équipe A'} ${m.scoreA??0} — ${m.scoreB??0} ${m.teamB||'Équipe B'}`;
   championTournament.textContent=d.tournamentName||'Tournoi DinkerScore';
 }
+
+function phaseLabel(m){
+  const phase=String(m.phase||'').trim();
+  const pool=String(m.pool||'').trim();
+  if(pool && (!phase || phase.toLowerCase().includes('poule'))) return `Poule ${pool}`;
+  if(phase) return phase;
+  return pool?`Poule ${pool}`:'Match';
+}
+function renderTournamentProgram(){
+  const el=document.getElementById('tlUpcoming');
+  const pageEl=document.getElementById('tlProgramPage');
+  if(!el)return;
+  const rows=Array.isArray(tournamentProgramData)?tournamentProgramData:[];
+  if(!rows.length){el.innerHTML='<div class="tl-empty">Aucune rencontre programmée</div>';if(pageEl)pageEl.textContent='';return;}
+  const pageSize=6;
+  const pages=Math.max(1,Math.ceil(rows.length/pageSize));
+  tournamentProgramPage=((tournamentProgramPage%pages)+pages)%pages;
+  const start=tournamentProgramPage*pageSize;
+  const visible=rows.slice(start,start+pageSize);
+  el.innerHTML=visible.map(m=>{
+    const st=String(m.status||'UPCOMING').toUpperCase();
+    const cls=st==='PLAYING'?'playing':(st==='FINISHED'?'finished':(st==='BYE'?'bye':''));
+    const state=st==='PLAYING'?`${esc(m.scoreA??0)} — ${esc(m.scoreB??0)}`:(st==='FINISHED'?`Terminé ${esc(m.scoreA??0)}-${esc(m.scoreB??0)}`:(st==='BYE'?'Exempt':'À venir'));
+    return `<div class="tl-program-row ${cls}"><div class="tl-program-phase">${esc(phaseLabel(m))}</div><div class="tl-court">T${esc(m.court||'-')}</div><div class="tl-program-teams"><strong>${esc(m.teamA||'À déterminer')}</strong> vs <strong>${esc(m.teamB||'À déterminer')}</strong></div><div class="tl-program-state">${state}</div></div>`;
+  }).join('');
+  if(pageEl)pageEl.textContent=`${start+1}–${Math.min(start+pageSize,rows.length)} / ${rows.length}`;
+}
+function startTournamentProgramRotation(rows){
+  tournamentProgramData=Array.isArray(rows)?rows:[];
+  tournamentProgramPage=0;
+  if(tournamentProgramTimer){clearInterval(tournamentProgramTimer);tournamentProgramTimer=null;}
+  renderTournamentProgram();
+  if(tournamentProgramData.length>6){
+    tournamentProgramTimer=setInterval(()=>{tournamentProgramPage++;renderTournamentProgram();},8000);
+  }
+}
+
+function stopTournamentPoolRotation(){
+  if(tournamentPoolTimer){clearInterval(tournamentPoolTimer);tournamentPoolTimer=null;}
+  tournamentPoolData=[];
+  tournamentPoolPage=0;
+}
+function renderTournamentPoolRankings(){
+  if(!tlRanking)return;
+  const pools=Array.isArray(tournamentPoolData)?tournamentPoolData:[];
+  if(!pools.length){tlRanking.innerHTML='<div class="tl-empty">Classements des poules à venir</div>';return;}
+  const pageSize=4;
+  const pages=Math.max(1,Math.ceil(pools.length/pageSize));
+  tournamentPoolPage=((tournamentPoolPage%pages)+pages)%pages;
+  const start=tournamentPoolPage*pageSize;
+  const visible=pools.slice(start,start+pageSize);
+  const gridClass=visible.length===1?'pools-1':`pools-${visible.length}`;
+  const rangeLabel=pools.length>pageSize?`<div class="tl-pool-page">Poules ${start+1}–${Math.min(start+pageSize,pools.length)} / ${pools.length}</div>`:'';
+  tlRanking.innerHTML=rangeLabel+`<div class="tl-pools-grid ${gridClass}">`+visible.map(pool=>{
+    const rows=Array.isArray(pool.ranking)?pool.ranking:[];
+    return `<div class="tl-pool-card"><div class="tl-pool-title">${esc(pool.event?pool.event+' • ':'')}POULE ${esc(pool.pool||'')}</div>`+
+      '<div class="tl-ranking-row header"><div>#</div><div>JOUEUR / ÉQUIPE</div><div>M</div><div>V</div><div>D</div><div>+/-</div></div>'+ 
+      (rows.length?rows.map(r=>`<div class="tl-ranking-row"><div class="tl-rank-pos">${esc(r.position||'')}</div><div>${esc(r.name||'')}</div><div>${esc(r.played??0)}</div><div>${esc(r.wins??0)}</div><div>${esc(r.losses??0)}</div><div>${esc(r.difference??0)}</div></div>`).join(''):'<div class="tl-empty">Classement à venir</div>')+`</div>`;
+  }).join('')+`</div>`;
+}
+function startTournamentPoolRotation(pools){
+  const next=Array.isArray(pools)?pools:[];
+  const currentLabel=(tournamentPoolData[tournamentPoolPage*4]||{}).pool;
+  tournamentPoolData=next;
+  if(tournamentPoolTimer){clearInterval(tournamentPoolTimer);tournamentPoolTimer=null;}
+  if(currentLabel){
+    const idx=tournamentPoolData.findIndex(p=>String(p.pool||'')===String(currentLabel));
+    tournamentPoolPage=idx>=0?Math.floor(idx/4):0;
+  }else tournamentPoolPage=0;
+  renderTournamentPoolRankings();
+  if(tournamentPoolData.length>4){
+    tournamentPoolTimer=setInterval(()=>{tournamentPoolPage++;renderTournamentPoolRankings();},9000);
+  }
+}
+
+
+function updateJourneyQr(d){
+  const card=document.getElementById('journeyQrCard');
+  const box=document.getElementById('journeyQrCode');
+  const label=document.getElementById('journeyQrCodeText');
+  if(!card||!box)return;
+  const code=String(d.tournamentCode||'').trim();
+  const link=String(d.viewerDeepLink||'').trim();
+  if(!code||!link){card.classList.remove('visible');box.innerHTML='';if(label)label.textContent='';return;}
+  card.classList.add('visible');
+  if(label)label.textContent=code;
+  if(box.dataset.link===link)return;
+  box.dataset.link=link;box.innerHTML='';
+  try{
+    if(typeof QRCode==='function'){new QRCode(box,{text:link,width:220,height:220,colorDark:'#071827',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}
+    else box.innerHTML='<div style="font:900 11px Arial;text-align:center;padding:8px">'+esc(code)+'</div>';
+  }catch(e){box.innerHTML='<div style="font:900 11px Arial;text-align:center;padding:8px">'+esc(code)+'</div>';}
+}
+
 function showTournamentScreen(d){
+  updateJourneyQr(d);
   const fm=findFinalMatch(d);
   const requestedMode=String(d.displayMode||'').toUpperCase();
 
@@ -204,32 +318,23 @@ function showTournamentScreen(d){
   if(fm && String(fm.status||'').toUpperCase()==='FINISHED'){showChampionScreen(d,fm);return;}
   if(fm){showFinalScreen(d,fm);return;}
   hideSpecialTournamentScreens();document.body.classList.add('tournament-mode'); winner.style.display='none';
-  tlTournamentName.textContent=d.tournamentName||'TOURNOI LIVE';
+  tlTournamentName.textContent=(d.tournamentName||'TOURNOI LIVE')+' • '+(d.kLevel||'K25');
   const current=Array.isArray(d.currentMatches)?d.currentMatches:[];
-  tlCurrentMatches.innerHTML=current.length?current.map(m=>`<div class="tl-match"><div class="tl-court">Terrain ${esc(m.court||'-')}</div><div class="tl-teams">${esc(m.teamA||'Équipe A')}<div class="tl-vs">VS</div>${esc(m.teamB||'Équipe B')}</div><div class="tl-score">${esc(m.scoreA??0)} — ${esc(m.scoreB??0)}</div><div class="tl-status">${esc((m.status||'EN COURS').replaceAll('_',' '))}</div></div>`).join(''):'<div class="tl-empty">Aucun match en cours</div>';
+  tlCurrentMatches.innerHTML=current.length?current.map(m=>`<div class="tl-match"><div class="tl-court">${esc(m.event?m.event+' • ':'')}Terrain ${esc(m.court||'-')} ${esc(m.pool?'• Poule '+m.pool:'')} ${esc(m.bracket?'• '+(m.bracket==='LOWER'?'Tableau bas':m.bracket==='UPPER'?'Tableau haut':m.bracket):'')}</div><div class="tl-teams">${esc(m.teamA||'Équipe A')}<div class="tl-vs">VS</div>${esc(m.teamB||'Équipe B')}</div><div class="tl-score">${esc(m.scoreA??0)} — ${esc(m.scoreB??0)}</div><div class="tl-status">${esc((m.status||'EN COURS').replaceAll('_',' '))} • ${esc(m.bestOfSets||1)} set(s) • ${esc(m.pointsPerSet||d.pointsToWin||11)} pts</div></div>`).join(''):'<div class="tl-empty">Aucun match en cours</div>';
   const pools=Array.isArray(d.poolRankings)?d.poolRankings:[];
   const rank=Array.isArray(d.ranking)?d.ranking:[];
   const isPoolTournament=d.isPoolTournament===true || pools.length>0;
   if(isPoolTournament){
-    if(pools.length){
-      const gridClass=pools.length===1?'pools-1':(pools.length<=4?`pools-${pools.length}`:'pools-many');
-      tlRanking.innerHTML=`<div class="tl-pools-grid ${gridClass}">`+pools.map(pool=>{
-        const rows=Array.isArray(pool.ranking)?pool.ranking:[];
-        return `<div class="tl-pool-card"><div class="tl-pool-title">POULE ${esc(pool.pool||'')}</div>`+
-          '<div class="tl-ranking-row header"><div>#</div><div>JOUEUR / ÉQUIPE</div><div>M</div><div>V</div><div>D</div><div>+/-</div></div>'+
-          (rows.length?rows.map(r=>`<div class="tl-ranking-row"><div class="tl-rank-pos">${esc(r.position||'')}</div><div>${esc(r.name||'')}</div><div>${esc(r.played??0)}</div><div>${esc(r.wins??0)}</div><div>${esc(r.losses??0)}</div><div>${esc(r.difference??0)}</div></div>`).join(''):'<div class="tl-empty">Classement à venir</div>')+`</div>`;
-      }).join('')+`</div>`;
-    }else{
-      tlRanking.innerHTML='<div class="tl-empty">Classements des poules à venir</div>';
-    }
+    startTournamentPoolRotation(pools);
   }else{
+    stopTournamentPoolRotation();
     tlRanking.innerHTML='<div class="tl-ranking-row header"><div>#</div><div>ÉQUIPE</div><div>V</div><div>D</div><div>+/-</div></div>'+ (rank.length?rank.map(r=>`<div class="tl-ranking-row"><div class="tl-rank-pos">${esc(r.position||'')}</div><div>${esc(r.name||'')}</div><div>${esc(r.wins??0)}</div><div>${esc(r.losses??0)}</div><div>${esc(r.difference??r.points??0)}</div></div>`).join(''):'<div class="tl-empty">Classement à venir</div>');
   }
-  const upcoming=Array.isArray(d.upcomingMatches)?d.upcomingMatches:[];
-  tlUpcoming.innerHTML=upcoming.length?upcoming.map(m=>`<div class="tl-upcoming"><div class="tl-court">T${esc(m.court||'-')}</div><div class="tl-time">${esc(m.time||'À venir')}</div><div><strong>${esc(m.teamA||'')}</strong> vs <strong>${esc(m.teamB||'')}</strong></div></div>`).join(''):'<div class="tl-empty">Aucun prochain match</div>';
+  const allMatches=Array.isArray(d.allMatches)&&d.allMatches.length?d.allMatches:(Array.isArray(d.upcomingMatches)?d.upcomingMatches:[]);
+  startTournamentProgramRotation(allMatches);
   const bracket=Array.isArray(d.bracket)?d.bracket:[];
-  tlBracket.innerHTML=bracket.length?bracket.map(b=>`<div><strong>${esc(b.round||'')}</strong> • ${esc(b.teamA||'')} vs ${esc(b.teamB||'')}</div>`).join(''):'<div>Le tableau final apparaîtra ici automatiquement.</div>';
-  tlFooterLeft.textContent=(d.location?`${d.tournamentName||'Tournoi'} • ${d.location}`:'DinkerScore • Tournoi Live')+' • TV 2.9.56';
+  tlBracket.innerHTML=bracket.length?bracket.map(b=>`<div><strong>${esc(b.bracket==='LOWER'?'TABLEAU BAS':b.bracket==='UPPER'?'TABLEAU HAUT':b.phase||b.round||'')}</strong> • ${esc(b.event?b.event+' • ':'')}${esc(b.teamA||'')} vs ${esc(b.teamB||'')} • ${esc(b.bestOfSets||1)} set(s) × ${esc(b.pointsPerSet||d.pointsToWin||11)} pts</div>`).join(''):'<div>Les tableaux haut et bas apparaîtront ici automatiquement.</div>';
+  tlFooterLeft.textContent=(d.location?`${d.tournamentName||'Tournoi'} • ${d.location}`:'DinkerScore • Tournoi Live')+' • '+(d.kLevel||'K25')+' • TV 2.9.63';
   tlUpdated.textContent='Mis à jour : '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 }
 ctx.addCustomMessageListener(NS,event=>{
