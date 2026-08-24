@@ -224,6 +224,76 @@
   <div class="hint">DinkerScore • Scorez, Annoncez, Gagnez</div>
   <button id="captureBtn" class="capture-btn" type="button" aria-label="Capturer l’écran DinkerScore">📸 CAPTURE PNG</button>
 <script>
+// Références DOM explicites - ne jamais dépendre des globals créés par les id HTML.
+const brEvent=document.getElementById('brEvent');
+const brPage=document.getElementById('brPage');
+const brTabs=document.getElementById('brTabs');
+const brTitle=document.getElementById('brTitle');
+const brTree=document.getElementById('brTree');
+const bracketScreen=document.getElementById('bracketScreen');
+const captureBtn=document.getElementById('captureBtn');
+const cardA=document.getElementById('cardA');
+const cardB=document.getElementById('cardB');
+const carouselScreen=document.getElementById('carouselScreen');
+const championName=document.getElementById('championName');
+const championScore=document.getElementById('championScore');
+const championScreen=document.getElementById('championScreen');
+const championTournament=document.getElementById('championTournament');
+const confetti=document.getElementById('confetti');
+const cvBody=document.getElementById('cvBody');
+const cvDots=document.getElementById('cvDots');
+const cvFooter=document.getElementById('cvFooter');
+const cvPage=document.getElementById('cvPage');
+const cvSub=document.getElementById('cvSub');
+const cvTitle=document.getElementById('cvTitle');
+const finalCourt=document.getElementById('finalCourt');
+const finalScoreA=document.getElementById('finalScoreA');
+const finalScoreB=document.getElementById('finalScoreB');
+const finalScreen=document.getElementById('finalScreen');
+const finalTeamA=document.getElementById('finalTeamA');
+const finalTeamB=document.getElementById('finalTeamB');
+const finalTournamentName=document.getElementById('finalTournamentName');
+const journeyQrCard=document.getElementById('journeyQrCard');
+const journeyQrCode=document.getElementById('journeyQrCode');
+const journeyQrCodeText=document.getElementById('journeyQrCodeText');
+const multiFinals=document.getElementById('multiFinals');
+const playersA=document.getElementById('playersA');
+const playersB=document.getElementById('playersB');
+const scoreA=document.getElementById('scoreA');
+const scoreB=document.getElementById('scoreB');
+const serverA=document.getElementById('serverA');
+const serverB=document.getElementById('serverB');
+const sets=document.getElementById('sets');
+const teamNameA=document.getElementById('teamNameA');
+const teamNameB=document.getElementById('teamNameB');
+const tlBracket=document.getElementById('tlBracket');
+const tlCurrentMatches=document.getElementById('tlCurrentMatches');
+const tlFooterLeft=document.getElementById('tlFooterLeft');
+const tlProgramPage=document.getElementById('tlProgramPage');
+const tlRanking=document.getElementById('tlRanking');
+const tlTournamentName=document.getElementById('tlTournamentName');
+const tlUpcoming=document.getElementById('tlUpcoming');
+const tlUpdated=document.getElementById('tlUpdated');
+const winner=document.getElementById('winner');
+const winnerName=document.getElementById('winnerName');
+
+
+window.addEventListener('error', function(ev){
+  try {
+    const msg = (ev && ev.message) ? ev.message : 'Erreur JavaScript inconnue';
+    window.__dsUpdateRxBadge('ERREUR JS • '+msg);
+    console.error('DinkerScore uncaught error', ev.error || ev);
+  } catch(_) {}
+});
+window.addEventListener('unhandledrejection', function(ev){
+  try {
+    const reason = ev && ev.reason;
+    const msg = reason && reason.message ? reason.message : String(reason || 'Promise rejetée');
+    window.__dsUpdateRxBadge('ERREUR PROMISE • '+msg);
+    console.error('DinkerScore unhandled rejection', reason);
+  } catch(_) {}
+});
+
 const NS_SCORE='urn:x-cast:fr.theplacetodink.dinkerscore.scoreboard';
 const NS_TOURNAMENT='urn:x-cast:fr.theplacetodink.dinkerscore.tournament';
 const NS=NS_SCORE; // compatibilité pour les réponses/captures
