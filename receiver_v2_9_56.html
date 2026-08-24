@@ -185,6 +185,17 @@
   <button id="captureBtn" class="capture-btn" type="button" aria-label="Capturer l’écran DinkerScore">📸 CAPTURE PNG</button>
 <script>
 const NS='urn:x-cast:fr.theplacetodink.dinkerscore.scoreboard';
+let tournamentModeActive=false;
+const tournamentTransfers=new Map();
+
+function processTournamentPayload(raw){
+  let data=raw;
+  if(typeof data==='string'){try{data=JSON.parse(data)}catch(e){console.error('Tournoi reconstitué invalide',e);return}}
+  if(!data)return;
+  tournamentModeActive=true;
+  showTournamentScreen(data);
+}
+
 const ctx=cast.framework.CastReceiverContext.getInstance();
 let previousServingTeam=null;
 let tournamentProgramTimer=null;
@@ -429,8 +440,46 @@ ctx.addCustomMessageListener(NS,event=>{
   console.log('DinkerScore message reçu',d.type||d.messageType,d);
   const type=String(d.type||d.messageType||'').toLowerCase();
   if(type==='capture_request'){captureAndSendToSender(event.senderId,d);return;}
-  if(type==='tournament_live'||type==='tournament'||type==='tournamentlive'){showTournamentScreen(d);return;}
+
+  if(type==='tournament_transfer_begin'){
+    const id=String(d.transferId||'');
+    if(id) tournamentTransfers.set(id,{total:Number(d.totalChunks||0),parts:[]});
+    console.log('Début transfert tournoi',id,d.totalChunks,d.totalChars);
+    return;
+  }
+  if(type==='tournament_transfer_chunk'){
+    const id=String(d.transferId||'');
+    const tr=tournamentTransfers.get(id);
+    if(tr){tr.parts[Number(d.index||0)]=String(d.data||'');}
+    return;
+  }
+  if(type==='tournament_transfer_end'){
+    const id=String(d.transferId||'');
+    const tr=tournamentTransfers.get(id);
+    if(!tr){console.error('Fin transfert sans début',id);return;}
+    const received=tr.parts.filter(x=>typeof x==='string').length;
+    if(received!==tr.total){console.error('Transfert incomplet',id,received,'/',tr.total);tournamentTransfers.delete(id);return;}
+    const raw=tr.parts.join('');
+    tournamentTransfers.delete(id);
+    console.log('Tournoi reconstitué',id,raw.length,'caractères');
+    processTournamentPayload(raw);
+    return;
+  }
+  if(type==='tournament_closed'){
+    tournamentModeActive=false;
+    tournamentTransfers.clear();
+    showScoreScreen();
+    return;
+  }
+  if(type==='tournament_live'||type==='tournament'||type==='tournamentlive'){
+    tournamentModeActive=true;
+    showTournamentScreen(d);
+    return;
+  }
   if(type!=='score')return;
+  // Tant qu'une diffusion tournoi est active, un score simple ne doit jamais
+  // reprendre la main sur le carrousel tournoi.
+  if(tournamentModeActive){console.log('Score simple ignoré : mode tournoi actif');return;}
   showScoreScreen();
   teamNameA.textContent=d.teamNameA||'Équipe A';teamNameB.textContent=d.teamNameB||'Équipe B';playersA.textContent=d.playersA||d.teamA||'Joueurs A';playersB.textContent=d.playersB||d.teamB||'Joueurs B';
   scoreA.textContent=d.scoreA??0;scoreB.textContent=d.scoreB??0;
