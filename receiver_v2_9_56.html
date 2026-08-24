@@ -184,7 +184,10 @@
   <div class="hint">DinkerScore • Scorez, Annoncez, Gagnez</div>
   <button id="captureBtn" class="capture-btn" type="button" aria-label="Capturer l’écran DinkerScore">📸 CAPTURE PNG</button>
 <script>
-const NS='urn:x-cast:fr.theplacetodink.dinkerscore.scoreboard';
+const NS_SCORE='urn:x-cast:fr.theplacetodink.dinkerscore.scoreboard';
+const NS_TOURNAMENT='urn:x-cast:fr.theplacetodink.dinkerscore.tournament';
+const NS=NS_SCORE; // compatibilité pour les réponses/captures
+let activeDisplayMode='score';
 let tournamentModeActive=false;
 const tournamentTransfers=new Map();
 
@@ -431,7 +434,7 @@ function showTournamentScreen(d){
   tlFooterLeft.textContent=(d.location?`${d.tournamentName||'Tournoi'} • ${d.location}`:'DinkerScore • Tournoi Live')+' • '+(d.kLevel||'K25')+' • TV 3.3 FINAL';
   tlUpdated.textContent='Mis à jour : '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 }
-ctx.addCustomMessageListener(NS,event=>{
+const handleDinkerScoreMessage=(event)=>{
   let d=event.data;
   if(typeof d==='string'){try{d=JSON.parse(d)}catch(e){console.error('DinkerScore JSON invalide',e,d);return}}
   if(!d)return;
@@ -442,6 +445,7 @@ ctx.addCustomMessageListener(NS,event=>{
   if(type==='capture_request'){captureAndSendToSender(event.senderId,d);return;}
 
   if(type==='tournament_transfer_begin'){
+    activeDisplayMode='tournament';
     const id=String(d.transferId||'');
     if(id) tournamentTransfers.set(id,{total:Number(d.totalChunks||0),parts:[]});
     tournamentModeActive=true;
@@ -473,6 +477,7 @@ ctx.addCustomMessageListener(NS,event=>{
     return;
   }
   if(type==='score_mode'||type==='tournament_closed'){
+    activeDisplayMode='score';
     tournamentModeActive=false;
     tournamentTransfers.clear();
     showScoreScreen();
@@ -480,13 +485,20 @@ ctx.addCustomMessageListener(NS,event=>{
     return;
   }
   if(type==='tournament_live'||type==='tournament'||type==='tournamentlive'){
+    activeDisplayMode='tournament';
     tournamentModeActive=true;
     showTournamentScreen(d);
     return;
   }
   if(type!=='score')return;
-  // Les deux diffusions sont indépendantes : tout message score reprend
-  // explicitement la main sur un éventuel mode tournoi précédent.
+  // Une mise à jour de score ne change JAMAIS le mode d'affichage.
+  // Seul le message explicite score_mode (bouton Diffusion Score TV) peut
+  // reprendre la main sur un tournoi. Cela évite qu'un rafraîchissement
+  // automatique du MatchScreen écrase le carrousel tournoi.
+  if(activeDisplayMode!=='score') {
+    console.log('Mise à jour score reçue mais affichage tournoi conservé');
+    return;
+  }
   tournamentModeActive=false;
   tournamentTransfers.clear();
   showScoreScreen();
@@ -496,9 +508,11 @@ ctx.addCustomMessageListener(NS,event=>{
   setServing(d.servingTeam===1?1:0,d.serverNumber??1);
   if(d.winner){winner.style.display='grid';winnerName.textContent=`${d.winner} remporte la rencontre !`}
   else{winner.style.display='none';winnerName.textContent=''}
-});
+};
+ctx.addCustomMessageListener(NS_SCORE,handleDinkerScoreMessage);
+ctx.addCustomMessageListener(NS_TOURNAMENT,handleDinkerScoreMessage);
 ctx.start({disableIdleTimeout:true});
-console.log('DinkerScore TV 3.3 SCORE+TOURNOI séparés prêt - namespace',NS);
+console.log('DinkerScore TV 3.3 SCORE+TOURNOI isolés prêt',NS_SCORE,NS_TOURNAMENT);
 
 // --- Capture PNG propre (mode navigateur uniquement) ---
 // Ajouter ?capture=1 à l'URL du receiver pour afficher le bouton.
