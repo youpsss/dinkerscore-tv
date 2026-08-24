@@ -421,9 +421,12 @@ function showTournamentScreen(d){
   tlUpdated.textContent='Mis à jour : '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 }
 ctx.addCustomMessageListener(NS,event=>{
-  let d=event.data;if(typeof d==='string'){try{d=JSON.parse(d)}catch(e){return}}
+  let d=event.data;
+  if(typeof d==='string'){try{d=JSON.parse(d)}catch(e){console.error('DinkerScore JSON invalide',e,d);return}}
   if(!d)return;
-  if(d.payload && typeof d.payload==='object') d={...d,...d.payload};
+  if(typeof d.payload==='string'){try{d={...d,...JSON.parse(d.payload)}}catch(e){}}
+  else if(d.payload && typeof d.payload==='object') d={...d,...d.payload};
+  console.log('DinkerScore message reçu',d.type||d.messageType,d);
   const type=String(d.type||d.messageType||'').toLowerCase();
   if(type==='capture_request'){captureAndSendToSender(event.senderId,d);return;}
   if(type==='tournament_live'||type==='tournament'||type==='tournamentlive'){showTournamentScreen(d);return;}
@@ -437,6 +440,7 @@ ctx.addCustomMessageListener(NS,event=>{
   else{winner.style.display='none';winnerName.textContent=''}
 });
 ctx.start({disableIdleTimeout:true});
+console.log('DinkerScore TV 3.3 prêt - namespace',NS);
 
 // --- Capture PNG propre (mode navigateur uniquement) ---
 // Ajouter ?capture=1 à l'URL du receiver pour afficher le bouton.
