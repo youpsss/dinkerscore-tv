@@ -161,6 +161,27 @@
     .journey-qr-code{width:6.4vw;height:6.4vw}
     .journey-qr-title{font-size:.64vw;max-width:8vw}.journey-qr-sub{font-size:.5vw;max-width:8vw}.journey-qr-code-text{font-size:.56vw}
 
+  
+    /* V3.3 lisibilité TV : cartes fortes, peu de texte, lecture à distance. */
+    .cv-title{font-size:1.9vw}.cv-sub{font-size:.92vw}.cv-page{font-size:.78vw}
+    .cv-live-board{height:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:.9vw}
+    .cv-live-card{background:#0b2840;border:2px solid #315d7e;border-radius:18px;padding:1.15vh 1vw;display:grid;grid-template-rows:auto auto 1fr auto;gap:.55vh;min-width:0}
+    .cv-live-card.active{border-color:#ffcc00;box-shadow:0 0 0 2px rgba(255,204,0,.11) inset}
+    .cv-live-terrain{display:flex;justify-content:space-between;align-items:center;font-size:1.1vw;font-weight:1000;color:#ffcc00}
+    .cv-live-event{font-size:.86vw;font-weight:900;color:#b8cde0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .cv-live-teams{display:grid;grid-template-columns:1fr auto 1fr;gap:.7vw;align-items:center}
+    .cv-live-name{font-size:1.28vw;font-weight:1000;line-height:1.08;overflow:hidden;text-overflow:ellipsis}
+    .cv-live-score{font-size:2.5vw;font-weight:1000;color:#fff;white-space:nowrap}
+    .cv-live-state{font-size:.72vw;font-weight:850;color:#93acc1}.cv-live-wait{display:grid;place-items:center;height:100%;font-size:1.2vw;font-weight:1000;color:#6f8ba1}
+    .cv-next-grid{height:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr));gap:.9vw}
+    .cv-next-card{background:#0c263d;border:2px solid #294c68;border-radius:18px;padding:1.15vh 1vw;display:grid;align-content:start;gap:.65vh;min-width:0}
+    .cv-next-terrain{font-size:1.05vw;font-weight:1000;color:#ffcc00}.cv-next-event{font-size:.86vw;font-weight:900;color:#a9bfd2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .cv-next-vs{font-size:1.33vw;font-weight:1000;line-height:1.18}.cv-next-vs .vs{color:#ffcc00;font-size:.8em;margin:0 .35vw}.cv-next-meta{font-size:.72vw;color:#829bb0;font-weight:850}
+    .cv-results-board{height:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(4,minmax(0,1fr));gap:.55vh .8vw}
+    .cv-result-card{background:#0c263d;border:1px solid #315675;border-radius:13px;padding:.7vh .8vw;display:grid;grid-template-columns:4.2vw 1fr auto;gap:.75vw;align-items:center;min-width:0}
+    .cv-result-court{font-size:.9vw;font-weight:1000;color:#ffcc00}.cv-result-main{min-width:0}.cv-result-event2{font-size:.68vw;color:#91a9bd;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cv-result-teams{font-size:.95vw;font-weight:950;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.cv-result-score2{font-size:1.45vw;font-weight:1000;color:#fff;white-space:nowrap}
+    .journey-qr.pending{opacity:.88}.journey-qr.pending .journey-qr-code{display:grid;width:5.4vw;height:5.4vw}.journey-qr.pending .journey-qr-code:after{content:'QR';font-size:1.4vw;font-weight:1000;color:#c2ccd5;background:#eef2f5;width:100%;height:100%;display:grid;place-items:center}
+
   </style>
 </head>
 <body>
@@ -496,7 +517,18 @@ function scorePair(m){return `${esc(m.scoreA??0)} — ${esc(m.scoreB??0)}`}
 function setsText(m){const a=Number(m.setsA||0),b=Number(m.setsB||0),n=Number(m.bestOfSets||1);if(n<=1)return '';if(a===b)return `Sets ${a}–${b}`;return `${a>b?esc(m.teamA||'Équipe A'):esc(m.teamB||'Équipe B')} mène ${Math.max(a,b)} set${Math.max(a,b)>1?'s':''} à ${Math.min(a,b)}`;}
 function matchCard(m){return `<div class="cv-card ${String(m.status||'').toUpperCase()==='PLAYING'?'live':''}"><div class="cv-kicker">TERRAIN ${esc(m.court||'-')} • ${esc(m.phase||m.pool||'MATCH')}</div><div class="cv-event">${eventLabel(m)}</div><div class="cv-versus"><div><div class="cv-player">${esc(m.teamA||'À déterminer')}</div></div><div class="cv-score">${esc(m.scoreA??0)}</div><div style="text-align:right"><div class="cv-player">${esc(m.teamB||'À déterminer')}</div></div></div><div class="cv-status">${esc(m.bestOfSets||1)} set(s) gagnant(s) • ${esc(m.pointsPerSet||11)} pts • +2${m.pool?' • Poule '+esc(m.pool):''}${setsText(m)?` <span class="cv-sets">${setsText(m)}</span>`:''}</div></div>`}
 function poolCard(p){const rows=Array.isArray(p.ranking)?p.ranking:(Array.isArray(p.rows)?p.rows:[]);return `<div class="cv-pool"><div class="cv-pool-title"><span>${esc(p.event? p.event+' • ':'')}${esc(p.pool||'POULE')}</span><span>${rows.length} participants</span></div><div class="cv-rank head"><div>#</div><div>JOUEUR / ÉQUIPE</div><div>MJ</div><div>V</div><div>+/-</div></div>${rows.map(r=>`<div class="cv-rank"><div>${esc(r.position||'')}</div><div>${esc(r.name||r.player||'')}</div><div>${esc(r.played??0)}</div><div>${esc(r.wins??0)}</div><div>${esc(r.difference??r.points??0)}</div></div>`).join('')}</div>`}
-function rowsSlide(title,sub,items){return {title,sub,html:`<div class="cv-list compact">${items.map(m=>`<div class="cv-row"><div class="terrain">T${esc(m.court||'-')}</div><div class="who"><strong>${eventLabel(m)}</strong> • ${esc(m.teamA||'')} vs ${esc(m.teamB||'')}</div><div class="result">${String(m.status||'').toUpperCase()==='FINISHED'?scorePair(m):String(m.status||'').toUpperCase()==='PLAYING'?scorePair(m):'À venir'}</div></div>`).join('')}</div>`}}
+function currentCourtSlide(d,current){
+  const courtCount=Math.max(1,Number(d.courtCount||6));
+  const courts=Array.from({length:courtCount},(_,i)=>i+1);
+  const groups=chunks(courts,6);
+  return groups.map((courtGroup,idx)=>({title:'MATCHS EN COURS',sub:`Tous les terrains • ${current.length} match(s) actif(s)`,html:`<div class="cv-live-board">${courtGroup.map(c=>{const m=current.find(x=>Number(x.court)===c);if(!m)return `<div class="cv-live-card"><div class="cv-live-terrain"><span>TERRAIN ${c}</span><span>LIBRE</span></div><div class="cv-live-wait">EN ATTENTE</div></div>`;return `<div class="cv-live-card active"><div class="cv-live-terrain"><span>TERRAIN ${c}</span><span>EN COURS</span></div><div class="cv-live-event">${eventLabel(m)}${m.pool?' • Poule '+esc(m.pool):''}</div><div class="cv-live-teams"><div class="cv-live-name">${esc(m.teamA||'À déterminer')}</div><div class="cv-live-score">${esc(m.scoreA??0)} — ${esc(m.scoreB??0)}</div><div class="cv-live-name" style="text-align:right">${esc(m.teamB||'À déterminer')}</div></div><div class="cv-live-state">${setsText(m)||`${esc(m.bestOfSets||1)} set(s) • ${esc(m.pointsPerSet||11)} pts`}</div></div>`}).join('')}</div>`}));
+}
+function upcomingSlides(items){
+  return chunks(items,6).map((g,i)=>({title:'PROCHAINS MATCHS',sub:`Terrains et épreuves • page ${i+1}`,html:`<div class="cv-next-grid">${g.map(m=>`<div class="cv-next-card"><div class="cv-next-terrain">TERRAIN ${esc(m.court||'-')}</div><div class="cv-next-event">${eventLabel(m)}${m.pool?' • Poule '+esc(m.pool):''}</div><div class="cv-next-vs">${esc(m.teamA||'À déterminer')} <span class="vs">VS</span> ${esc(m.teamB||'À déterminer')}</div><div class="cv-next-meta">${esc(m.phase||'À venir')} • ${esc(m.bestOfSets||1)} set(s) • ${esc(m.pointsPerSet||11)} pts</div></div>`).join('')}</div>`}));
+}
+function resultSlides(items){
+  return chunks(items,8).map((g,i)=>({title:'DERNIERS RÉSULTATS',sub:`Résultats récents • page ${i+1}`,html:`<div class="cv-results-board">${g.map(m=>`<div class="cv-result-card"><div class="cv-result-court">T${esc(m.court||'-')}</div><div class="cv-result-main"><div class="cv-result-event2">${eventLabel(m)}${m.pool?' • Poule '+esc(m.pool):''}</div><div class="cv-result-teams">${esc(m.teamA||'')} — ${esc(m.teamB||'')}</div></div><div class="cv-result-score2">${scorePair(m)}</div></div>`).join('')}</div>`}));
+}
 function bracketSlide(eventName,kind,matches){
   const pick=matches.filter(m=>String(m.bracket||'').toUpperCase()===kind);
   if(!pick.length)return null;
@@ -531,21 +563,13 @@ function buildCarouselSlides(d){
   const all=Array.isArray(d.allMatches)?d.allMatches:[];
   const currentFromAll=all.filter(m=>String(m.status||'').toUpperCase()==='PLAYING');
   const current=currentFromAll.length?currentFromAll:(Array.isArray(d.currentMatches)?d.currentMatches:[]);
-  const courtCount=Math.max(1,Number(d.courtCount||6));
-  const courts=Array.from({length:courtCount},(_,i)=>i+1);
-  chunks(courts,6).forEach((courtGroup,i)=>{
-    const cards=courtGroup.map(c=>courtStatusCard(c,current.find(m=>Number(m.court)===c))).join('');
-    slides.push({title:'MATCHS EN COURS — TOUS LES TERRAINS',sub:`${current.length} match(s) actif(s) • Terrains ${courtGroup[0]} à ${courtGroup[courtGroup.length-1]}`,html:`<div class="cv-grid six">${cards}</div>`});
-  });
+  currentCourtSlide(d,current).forEach(sl=>slides.push(sl));
 
-  const finished=all.filter(m=>String(m.status||'').toUpperCase()==='FINISHED').slice(-24).reverse();
-  chunks(finished,12).forEach((g,i)=>slides.push(rowsSlide('DERNIERS RÉSULTATS',`12 résultats maximum • page ${i+1}`,g)));
+  const finished=all.filter(m=>String(m.status||'').toUpperCase()==='FINISHED').slice(-16).reverse();
+  resultSlides(finished).forEach(sl=>slides.push(sl));
 
   const upcoming=all.filter(m=>String(m.status||'').toUpperCase()!=='FINISHED'&&String(m.status||'').toUpperCase()!=='PLAYING').slice(0,12);
-  if(upcoming.length)slides.push(rowsSlide('PROCHAINS MATCHS','12 rencontres maximum',upcoming));
-
-  const events=[...new Set(all.map(m=>m.event).filter(Boolean))].filter(ev=>all.some(m=>m.event===ev&&String(m.status||'').toUpperCase()==='FINISHED'));
-  chunks(events,4).forEach((g,i)=>slides.push(categoryResultsSlide(g,all,i)));
+  upcomingSlides(upcoming).forEach(sl=>slides.push(sl));
 
   const bracket=Array.isArray(d.bracket)?d.bracket:[];
   const be=[...new Set(bracket.map(m=>m.event||'Épreuve principale'))];
@@ -570,8 +594,8 @@ function updateJourneyQr(d){
   if(!code||!link){
     card.classList.add('pending');
     box.innerHTML='';
-    if(label)label.textContent='QR EN COURS DE CRÉATION';
-    const sub=card.querySelector('.journey-qr-sub');if(sub)sub.textContent='Création du code public DINK-XXXX en cours…';
+    if(label)label.textContent='QR BIENTÔT DISPONIBLE';
+    const sub=card.querySelector('.journey-qr-sub');if(sub)sub.textContent='Le code public est en cours de création. La TV se mettra à jour automatiquement.';
     return;
   }
   card.classList.remove('pending');
@@ -701,7 +725,7 @@ const handleDinkerScoreMessage=(event)=>{
 };
 window.__dinkerReceiverDispatch=handleDinkerScoreMessage;
 if(window.__dsReceiverBootError){ window.__dsUpdateRxBadge('ERREUR INIT CAST • '+window.__dsReceiverBootError); }
-else { window.__dsUpdateRxBadge('JS OK • RX '+window.__dsRxCount); }
+else { /* diagnostic masqué en production */ }
 const __queued=(window.__dsPendingMessages||[]).splice(0);
 __queued.forEach(ev=>{ try{ handleDinkerScoreMessage(ev); }catch(e){ window.__dsUpdateRxBadge('ERREUR JS • '+(e&&e.message?e.message:e)); console.error(e); } });
 console.log('DinkerScore TV 3.3 listener précoce prêt',NS_SCORE,NS_TOURNAMENT);
