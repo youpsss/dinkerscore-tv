@@ -472,10 +472,11 @@ ctx.addCustomMessageListener(NS,event=>{
     processTournamentPayload(raw);
     return;
   }
-  if(type==='tournament_closed'){
+  if(type==='score_mode'||type==='tournament_closed'){
     tournamentModeActive=false;
     tournamentTransfers.clear();
     showScoreScreen();
+    console.log('Mode score forcé');
     return;
   }
   if(type==='tournament_live'||type==='tournament'||type==='tournamentlive'){
@@ -484,9 +485,10 @@ ctx.addCustomMessageListener(NS,event=>{
     return;
   }
   if(type!=='score')return;
-  // Tant qu'une diffusion tournoi est active, un score simple ne doit jamais
-  // reprendre la main sur le carrousel tournoi.
-  if(tournamentModeActive){console.log('Score simple ignoré : mode tournoi actif');return;}
+  // Les deux diffusions sont indépendantes : tout message score reprend
+  // explicitement la main sur un éventuel mode tournoi précédent.
+  tournamentModeActive=false;
+  tournamentTransfers.clear();
   showScoreScreen();
   teamNameA.textContent=d.teamNameA||'Équipe A';teamNameB.textContent=d.teamNameB||'Équipe B';playersA.textContent=d.playersA||d.teamA||'Joueurs A';playersB.textContent=d.playersB||d.teamB||'Joueurs B';
   scoreA.textContent=d.scoreA??0;scoreB.textContent=d.scoreB??0;
@@ -496,7 +498,7 @@ ctx.addCustomMessageListener(NS,event=>{
   else{winner.style.display='none';winnerName.textContent=''}
 });
 ctx.start({disableIdleTimeout:true});
-console.log('DinkerScore TV 3.3 prêt - namespace',NS);
+console.log('DinkerScore TV 3.3 SCORE+TOURNOI séparés prêt - namespace',NS);
 
 // --- Capture PNG propre (mode navigateur uniquement) ---
 // Ajouter ?capture=1 à l'URL du receiver pour afficher le bouton.
