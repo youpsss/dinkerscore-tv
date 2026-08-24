@@ -393,6 +393,12 @@ function renderTournamentProgram(){
   }).join('');
   if(pageEl)pageEl.textContent=`${start+1}–${Math.min(start+pageSize,rows.length)} / ${rows.length}`;
 }
+function stopTournamentProgramRotation(){
+  if(tournamentProgramTimer){
+    clearInterval(tournamentProgramTimer);
+    tournamentProgramTimer=null;
+  }
+}
 function startTournamentProgramRotation(rows){
   tournamentProgramData=Array.isArray(rows)?rows:[];
   tournamentProgramPage=0;
