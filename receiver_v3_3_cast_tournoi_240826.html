@@ -576,11 +576,18 @@ function buildCarouselSlides(d){
   be.forEach(ev=>{const em=bracket.filter(m=>(m.event||'Épreuve principale')===ev);['UPPER','LOWER'].forEach(k=>{const sl=bracketSlide(ev,k,em);if(sl)slides.push(sl);});});
   const finals=Array.isArray(d.liveFinals)?d.liveFinals:[];
   if(finals.length)chunks(finals,4).forEach(g=>slides.unshift({title:'FINALES EN DIRECT',sub:`${g.length} finale(s) simultanée(s)`,html:`<div class="cv-grid four">${g.map(matchCard).join('')}</div>`}));
-  if(!slides.length)slides.push({title:'TOURNOI LIVE',sub:d.tournamentName||'DinkerScore',html:'<div class="cv-card"><div class="cv-player">Les informations du tournoi vont apparaître ici.</div></div>'});
-  return slides;
+  const mv=String(d.multiTvView||'AUTO').toUpperCase();
+  let selected=slides;
+  if(mv==='ALL_POOLS') selected=slides.filter(x=>x.title.startsWith('CLASSEMENTS DES POULES'));
+  else if(mv==='RESULTS') selected=slides.filter(x=>x.title.startsWith('DERNIERS RÉSULTATS')||x.title.startsWith('RÉSULTATS'));
+  else if(mv==='BRACKETS') selected=slides.filter(x=>x.title.includes('TABLEAU')||x.title.includes('CLASSEMENT •'));
+  else if(mv==='FINALS') selected=slides.filter(x=>x.title.startsWith('FINALES EN DIRECT'));
+  if(!selected.length) selected=slides;
+  if(!selected.length)selected.push({title:'TOURNOI LIVE',sub:d.tournamentName||'DinkerScore',html:'<div class="cv-card"><div class="cv-player">Les informations du tournoi vont apparaître ici.</div></div>'});
+  return selected;
 }
-function renderCarousel(){const s=carouselSlides[carouselIndex%carouselSlides.length];cvTitle.textContent=s.title;cvSub.textContent=s.sub||'';cvBody.innerHTML=s.html;cvPage.textContent=`Écran ${carouselIndex%carouselSlides.length+1} / ${carouselSlides.length} • 5 s`;cvFooter.textContent=`${latestTournamentData?.tournamentName||'Tournoi'} • ${latestTournamentData?.kLevel||''} • DinkerScore`;cvDots.textContent=carouselSlides.map((_,i)=>i===carouselIndex%carouselSlides.length?'●':'○').slice(0,12).join(' ');}
-function showCarouselScreen(d){latestTournamentData=d;updateJourneyQr(d);stopBracketRotation();stopTournamentProgramRotation();stopTournamentPoolRotation();hideSpecialTournamentScreens();document.body.classList.remove('tournament-mode');winner.style.display='none';const screen=document.getElementById('carouselScreen');screen.classList.add('active');carouselSlides=buildCarouselSlides(d);if(carouselIndex>=carouselSlides.length)carouselIndex=0;renderCarousel();stopCarousel();if(carouselSlides.length>1)carouselTimer=setInterval(()=>{carouselIndex=(carouselIndex+1)%carouselSlides.length;renderCarousel();},5000);}
+function renderCarousel(){const s=carouselSlides[carouselIndex%carouselSlides.length];const sec=Math.max(3,Math.min(60,Number(latestTournamentData?.multiTvRotationSeconds||5)));cvTitle.textContent=s.title;cvSub.textContent=s.sub||'';cvBody.innerHTML=s.html;cvPage.textContent=`Écran ${carouselIndex%carouselSlides.length+1} / ${carouselSlides.length} • ${sec} s`;cvFooter.textContent=`${latestTournamentData?.tournamentName||'Tournoi'} • ${latestTournamentData?.kLevel||''} • DinkerScore`;cvDots.textContent=carouselSlides.map((_,i)=>i===carouselIndex%carouselSlides.length?'●':'○').slice(0,12).join(' ');}
+function showCarouselScreen(d){latestTournamentData=d;updateJourneyQr(d);stopBracketRotation();stopTournamentProgramRotation();stopTournamentPoolRotation();hideSpecialTournamentScreens();document.body.classList.remove('tournament-mode');winner.style.display='none';const screen=document.getElementById('carouselScreen');screen.classList.add('active');carouselSlides=buildCarouselSlides(d);if(carouselIndex>=carouselSlides.length)carouselIndex=0;renderCarousel();stopCarousel();if(carouselSlides.length>1){const sec=Math.max(3,Math.min(60,Number(d.multiTvRotationSeconds||5)));carouselTimer=setInterval(()=>{carouselIndex=(carouselIndex+1)%carouselSlides.length;renderCarousel();},sec*1000);}}
 
 function updateJourneyQr(d){
   const card=document.getElementById('journeyQrCard');
@@ -642,9 +649,40 @@ function showTournamentScreen(d){
   startTournamentProgramRotation(allMatches);
   const bracket=Array.isArray(d.bracket)?d.bracket:[];
   tlBracket.innerHTML=bracket.length?bracket.map(b=>`<div><strong>${esc(b.bracket==='LOWER'?'TABLEAU BAS':b.bracket==='UPPER'?'TABLEAU HAUT':b.phase||b.round||'')}</strong> • ${esc(b.event?b.event+' • ':'')}${esc(b.teamA||'')} vs ${esc(b.teamB||'')} • ${esc(b.bestOfSets||1)} set(s) × ${esc(b.pointsPerSet||d.pointsToWin||11)} pts</div>`).join(''):'<div>Les tableaux haut et bas apparaîtront ici automatiquement.</div>';
-  tlFooterLeft.textContent=(d.location?`${d.tournamentName||'Tournoi'} • ${d.location}`:'DinkerScore • Tournoi Live')+' • '+(d.kLevel||'K25')+' • TV 3.3 FINAL';
+  tlFooterLeft.textContent=(d.location?`${d.tournamentName||'Tournoi'} • ${d.location}`:'DinkerScore • Tournoi Live')+' • '+(d.kLevel||'K25')+' • TV 3.5 MULTI-TV';
   tlUpdated.textContent='Mis à jour : '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 }
+
+// ===== DinkerScore Multi-TV V3.5 : pilotage cloud indépendant du Cast =====
+let dsMultiTvDisplayId = localStorage.getItem('dinkerscore_multi_tv_display_id') || '';
+let dsMultiTvApiKey = localStorage.getItem('dinkerscore_multi_tv_api_key') || '';
+let dsMultiTvProjectId = localStorage.getItem('dinkerscore_multi_tv_project_id') || 'dinkerscore';
+let dsMultiTvLastVersion = 0;
+let dsMultiTvPollTimer = null;
+function dsFirestoreValue(v){
+  if(!v||typeof v!=='object')return null;
+  if('stringValue' in v)return v.stringValue; if('integerValue' in v)return Number(v.integerValue); if('doubleValue' in v)return Number(v.doubleValue); if('booleanValue' in v)return !!v.booleanValue; if('timestampValue' in v)return v.timestampValue; if('nullValue' in v)return null;
+  if(v.arrayValue)return (v.arrayValue.values||[]).map(dsFirestoreValue);
+  if(v.mapValue){const o={};Object.entries(v.mapValue.fields||{}).forEach(([k,x])=>o[k]=dsFirestoreValue(x));return o;} return null;
+}
+function dsDecodeFirestoreDoc(doc){const out={};Object.entries((doc&&doc.fields)||{}).forEach(([k,v])=>out[k]=dsFirestoreValue(v));return out;}
+function dsApplyMultiTvView(raw,cfg){
+  const d=JSON.parse(JSON.stringify(raw||{})); const mode=String(cfg.viewMode||'AUTO').toUpperCase(); const filter=String(cfg.filterValue||'').trim();
+  d.multiTvView=mode; d.multiTvRotationSeconds=Math.max(3,Math.min(60,Number(cfg.rotationSeconds||8)));
+  const f=(arr,pred)=>Array.isArray(arr)?arr.filter(pred):[];
+  if(mode==='COURT'&&filter){const c=Number(filter),pred=m=>Number(m.court)===c; d.allMatches=f(d.allMatches,pred); d.currentMatches=f(d.currentMatches,pred); d.upcomingMatches=f(d.upcomingMatches,pred); d.bracket=f(d.bracket,pred); d.liveFinals=f(d.liveFinals,pred);}
+  if(mode==='POOL'&&filter){const pred=m=>String(m.pool||'')===filter; d.allMatches=f(d.allMatches,pred); d.currentMatches=f(d.currentMatches,pred); d.upcomingMatches=f(d.upcomingMatches,pred); d.poolRankings=(Array.isArray(d.poolRankings)?d.poolRankings:[]).filter(p=>String(p.pool||p.label||p.name||'')===filter); d.bracket=[];}
+  if(mode==='EVENT'&&filter){const pred=m=>String(m.event||'')===filter; d.allMatches=f(d.allMatches,pred); d.currentMatches=f(d.currentMatches,pred); d.upcomingMatches=f(d.upcomingMatches,pred); d.bracket=f(d.bracket,pred); d.liveFinals=f(d.liveFinals,pred);}
+  return d;
+}
+async function dsPollMultiTv(){
+  if(!dsMultiTvDisplayId||!dsMultiTvApiKey)return;
+  try{const url=`https://firestore.googleapis.com/v1/projects/${encodeURIComponent(dsMultiTvProjectId)}/databases/(default)/documents/tvDisplays/${encodeURIComponent(dsMultiTvDisplayId)}?key=${encodeURIComponent(dsMultiTvApiKey)}`; const r=await fetch(url,{cache:'no-store'}); if(!r.ok)return; const cfg=dsDecodeFirestoreDoc(await r.json()); const ver=Number(cfg.payloadVersion||0), nonce=Number(cfg.commandNonce||0); if(ver>0&&(ver!==dsMultiTvLastVersion||nonce>dsMultiTvLastVersion)){dsMultiTvLastVersion=Math.max(ver,nonce); if(typeof cfg.payload==='string'&&cfg.payload){try{const raw=JSON.parse(cfg.payload),viewed=dsApplyMultiTvView(raw,cfg); activeDisplayMode='tournament'; tournamentModeActive=true; showTournamentScreen(viewed);}catch(e){console.error('Multi-TV payload invalide',e);}}}}catch(e){console.warn('Multi-TV poll',e);}
+}
+function dsStartMultiTvPolling(){if(dsMultiTvPollTimer)clearInterval(dsMultiTvPollTimer); if(!dsMultiTvDisplayId)return; dsPollMultiTv(); dsMultiTvPollTimer=setInterval(dsPollMultiTv,1800);}
+function dsPairMultiTv(d){dsMultiTvDisplayId=String(d.displayId||''); dsMultiTvApiKey=String(d.firestoreApiKey||''); dsMultiTvProjectId=String(d.firestoreProjectId||'dinkerscore'); if(!dsMultiTvDisplayId||!dsMultiTvApiKey)return; localStorage.setItem('dinkerscore_multi_tv_display_id',dsMultiTvDisplayId); localStorage.setItem('dinkerscore_multi_tv_api_key',dsMultiTvApiKey); localStorage.setItem('dinkerscore_multi_tv_project_id',dsMultiTvProjectId); dsMultiTvLastVersion=0; dsStartMultiTvPolling(); showTournamentScreen({type:'tournament_live',displayMode:'TOURNAMENT_LOADING',transferPending:true,tournamentName:'DinkerScore Multi-TV • '+String(d.pairCode||'TV'),matchCount:0});}
+if(dsMultiTvDisplayId&&dsMultiTvApiKey)setTimeout(dsStartMultiTvPolling,1200);
+
 const handleDinkerScoreMessage=(event)=>{
   let d=event.data;
   if(typeof d==='string'){try{d=JSON.parse(d)}catch(e){console.error('DinkerScore JSON invalide',e,d);return}}
@@ -654,6 +692,7 @@ const handleDinkerScoreMessage=(event)=>{
   console.log('DinkerScore message reçu',d.type||d.messageType,d);
   const type=String(d.type||d.messageType||'').toLowerCase();
   if(type==='capture_request'){captureAndSendToSender(event.senderId,d);return;}
+  if(type==='multi_tv_pair'){dsPairMultiTv(d);return;}
 
   if(type==='tournament_transfer_begin'){
     activeDisplayMode='tournament';
@@ -728,7 +767,7 @@ if(window.__dsReceiverBootError){ window.__dsUpdateRxBadge('ERREUR INIT CAST •
 else { /* diagnostic masqué en production */ }
 const __queued=(window.__dsPendingMessages||[]).splice(0);
 __queued.forEach(ev=>{ try{ handleDinkerScoreMessage(ev); }catch(e){ window.__dsUpdateRxBadge('ERREUR JS • '+(e&&e.message?e.message:e)); console.error(e); } });
-console.log('DinkerScore TV 3.3 listener précoce prêt',NS_SCORE,NS_TOURNAMENT);
+console.log('DinkerScore TV 3.5 Multi-TV listener prêt',NS_SCORE,NS_TOURNAMENT);
 
 // --- Capture PNG propre (mode navigateur uniquement) ---
 // Ajouter ?capture=1 à l'URL du receiver pour afficher le bouton.
