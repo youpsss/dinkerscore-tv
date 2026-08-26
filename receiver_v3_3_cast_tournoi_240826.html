@@ -35,7 +35,14 @@
     var __dsCtx = cast.framework.CastReceiverContext.getInstance();
     __dsCtx.addCustomMessageListener(window.__dsScoreNamespace, window.__dsEarlyListener);
     __dsCtx.addCustomMessageListener(window.__dsTournamentNamespace, window.__dsEarlyListener);
-    __dsCtx.start({disableIdleTimeout:true});
+    var __dsOptions = new cast.framework.CastReceiverOptions();
+    __dsOptions.disableIdleTimeout = true;
+    // Multi-TV DinkerScore : une TV associée doit rester active même quand le téléphone
+    // quitte sa session sender pour aller sélectionner une autre TV.
+    // Le SDK déclenche normalement SENDER_DISCONNECTED après une période sans sender ;
+    // on prolonge cette fenêtre pour la durée d'un tournoi complet.
+    __dsOptions.maxInactivity = 43200; // 12 h
+    __dsCtx.start(__dsOptions);
     window.__dsReceiverStarted=true;
   } catch(e) {
     window.__dsReceiverBootError = String(e && e.message ? e.message : e);
@@ -351,6 +358,19 @@ function processTournamentPayload(raw){
 }
 
 const ctx=window.__dsCtx || cast.framework.CastReceiverContext.getInstance();
+// Multi-TV persistant : si le sender Android se détache, ne pas quitter le mode tournoi.
+// Le polling Firestore reste la source de vérité de cet écran.
+try {
+  ctx.addEventListener(cast.framework.system.EventType.SENDER_DISCONNECTED, function(){
+    if(dsMultiTvDisplayId){
+      activeDisplayMode='tournament';
+      tournamentModeActive=true;
+      setTimeout(dsStartMultiTvPolling, 250);
+      console.log('Multi-TV: sender déconnecté, receiver conservé actif');
+    }
+  });
+} catch(e){ console.warn('Multi-TV sender disconnect listener', e); }
+
 let previousServingTeam=null;
 let tournamentProgramTimer=null;
 let tournamentProgramPage=0;
@@ -704,7 +724,7 @@ async function dsPollMultiTv(){
   }catch(e){console.warn('Multi-TV poll',e);}
 }
 function dsStartMultiTvPolling(){if(dsMultiTvPollTimer)clearInterval(dsMultiTvPollTimer); if(!dsMultiTvDisplayId)return; dsPollMultiTv(); dsMultiTvPollTimer=setInterval(dsPollMultiTv,1800);}
-function dsPairMultiTv(d){dsMultiTvDisplayId=String(d.displayId||''); dsMultiTvApiKey=String(d.firestoreApiKey||''); dsMultiTvProjectId=String(d.firestoreProjectId||'dinkerscore'); if(!dsMultiTvDisplayId||!dsMultiTvApiKey)return; localStorage.setItem('dinkerscore_multi_tv_display_id',dsMultiTvDisplayId); localStorage.setItem('dinkerscore_multi_tv_api_key',dsMultiTvApiKey); localStorage.setItem('dinkerscore_multi_tv_project_id',dsMultiTvProjectId); dsMultiTvLastVersion=0; dsMultiTvLastConfigKey=''; dsStartMultiTvPolling(); showTournamentScreen({type:'tournament_live',displayMode:'TOURNAMENT_LOADING',transferPending:true,tournamentName:'DinkerScore Multi-TV • '+String(d.pairCode||'TV')+' • associé',matchCount:0});}
+function dsPairMultiTv(d){dsMultiTvDisplayId=String(d.displayId||''); dsMultiTvApiKey=String(d.firestoreApiKey||''); dsMultiTvProjectId=String(d.firestoreProjectId||'dinkerscore'); if(!dsMultiTvDisplayId||!dsMultiTvApiKey)return; localStorage.setItem('dinkerscore_multi_tv_display_id',dsMultiTvDisplayId); localStorage.setItem('dinkerscore_multi_tv_api_key',dsMultiTvApiKey); localStorage.setItem('dinkerscore_multi_tv_project_id',dsMultiTvProjectId); localStorage.setItem('dinkerscore_multi_tv_persistent','1'); dsMultiTvLastVersion=0; dsMultiTvLastConfigKey=''; dsStartMultiTvPolling(); showTournamentScreen({type:'tournament_live',displayMode:'TOURNAMENT_LOADING',transferPending:true,tournamentName:'DinkerScore Multi-TV • '+String(d.pairCode||'TV')+' • associé',matchCount:0});}
 if(dsMultiTvDisplayId&&dsMultiTvApiKey)setTimeout(dsStartMultiTvPolling,1200);
 
 const handleDinkerScoreMessage=(event)=>{
