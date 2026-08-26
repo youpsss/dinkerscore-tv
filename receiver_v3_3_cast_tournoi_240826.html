@@ -600,12 +600,23 @@ function updateJourneyQr(d){
   if(!card||!box)return;
   const code=String(d.tournamentCode||'').trim();
   const link=String(d.viewerDeepLink||'').trim();
-  if(!code||!link){card.classList.remove('visible');card.classList.remove('pending');box.innerHTML='';if(label)label.textContent='';return;}
+  const qrData=String(d.viewerQrDataUrl||'').trim();
+  if(!code||!link){card.classList.remove('visible');card.classList.remove('pending');box.innerHTML='';box.dataset.link='';if(label)label.textContent='';return;}
   card.classList.remove('pending');
   card.classList.add('visible');
   if(label)label.textContent=code;
-  if(box.dataset.link===link)return;
+  if(box.dataset.link===link && box.innerHTML.trim())return;
   box.dataset.link=link;box.innerHTML='';
+  // V3.6.6 QR ONLY : le PNG est généré par Android et voyage avec le payload.
+  // C'est la voie prioritaire : aucune dépendance réseau/CDN côté TV.
+  if(qrData){
+    const img=document.createElement('img');
+    img.alt='QR parcours joueur';
+    img.src=qrData;
+    img.style.width='100%';img.style.height='100%';img.style.objectFit='contain';
+    box.appendChild(img);
+    return;
+  }
   try{
     if(typeof QRCode==='function'){new QRCode(box,{text:link,width:220,height:220,colorDark:'#071827',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}
     else box.innerHTML='<div style="font:900 11px Arial;text-align:center;padding:8px">'+esc(code)+'</div>';
