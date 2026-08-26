@@ -127,8 +127,8 @@
 
   
     /* V2.9.63 : QR gratuit vers le parcours personnel du joueur. */
-    .journey-qr{position:fixed;right:1.5vw;bottom:1.4vh;z-index:45;display:none;grid-template-columns:auto 1fr;align-items:center;gap:.7vw;padding:.65vh .65vw;background:rgba(255,255,255,.96);color:#071827;border:3px solid var(--gold);border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,.35);text-align:left}
-    .journey-qr.visible{display:grid!important;opacity:1!important;visibility:visible!important}.journey-qr-code{width:7.8vw;height:7.8vw;display:grid;place-items:center;background:#fff;overflow:hidden}.journey-qr-code img,.journey-qr-code canvas{width:100%!important;height:100%!important}.journey-qr-title{font-size:.78vw;font-weight:1000;color:#071827;line-height:1.1;max-width:9.5vw}.journey-qr-sub{font-size:.62vw;font-weight:800;color:#4c5d6a;margin-top:.3vh;max-width:9.5vw}.journey-qr-code-text{font-size:.66vw;font-weight:1000;color:#071827;margin-top:.35vh;letter-spacing:.05em}
+    .journey-qr{position:fixed;right:1.3vw;bottom:1.3vh;z-index:90;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:.7vw;padding:.65vh .65vw;background:rgba(255,255,255,.96);color:#071827;border:3px solid var(--gold);border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,.35);text-align:left}
+    .journey-qr.visible{display:grid!important;opacity:1!important;visibility:visible!important;transform:none!important}.journey-qr-code{width:7.8vw;height:7.8vw;display:grid;place-items:center;background:#fff;overflow:hidden}.journey-qr-code img,.journey-qr-code canvas{width:100%!important;height:100%!important}.journey-qr-title{font-size:.78vw;font-weight:1000;color:#071827;line-height:1.1;max-width:9.5vw}.journey-qr-sub{font-size:.62vw;font-weight:800;color:#4c5d6a;margin-top:.3vh;max-width:9.5vw}.journey-qr-code-text{font-size:.66vw;font-weight:1000;color:#071827;margin-top:.35vh;letter-spacing:.05em}
   
     /* V3.3 CARROUSEL TV : une information majeure par écran, rotation toutes les 8 secondes. */
     .carousel-screen{position:fixed;inset:0;z-index:25;display:none;background:linear-gradient(180deg,#061624 0,#020a11 100%);color:#fff;padding:3.2vh 3.4vw 4.4vh;grid-template-rows:auto 1fr auto;gap:2vh}
@@ -258,7 +258,7 @@
     <footer class="cv-footer"><div id="cvFooter">DinkerScore • Scorez, Annoncez, Gagnez</div><div id="cvDots" class="cv-dots">● ○ ○</div></footer>
   </main>
 
-  <aside id="journeyQrCard" class="journey-qr" aria-label="QR code parcours personnel joueur">
+  <aside id="journeyQrCard" class="journey-qr visible pending" aria-label="QR code parcours personnel joueur">
     <div id="journeyQrCode" class="journey-qr-code"></div>
     <div><div class="journey-qr-title">📱 MON PARCOURS GRATUIT</div><div class="journey-qr-sub">Scanne pour voir tes matchs, ton terrain et ton classement en direct.</div><div id="journeyQrCodeText" class="journey-qr-code-text"></div></div>
   </aside>
@@ -596,12 +596,16 @@ function updateJourneyQr(d){
   const label=document.getElementById('journeyQrCodeText');
   if(!card||!box)return;
   const code=String(d.tournamentCode||'').trim();
-  const link=String(d.viewerDeepLink||'').trim();
+  const providedLink=String(d.viewerDeepLink||'').trim();
+  // Le QR ne dépend plus de viewerDeepLink : si le code public existe,
+  // le receiver reconstruit lui-même le lien DinkerScore.
+  const link=providedLink || (code ? ('dinkerscore://tournament/'+encodeURIComponent(code)) : '');
   const qrData=String(d.viewerQrDataUrl||'').trim();
   card.classList.add('visible');
   if(!code||!link){
     card.classList.add('pending');
-    box.innerHTML='';
+    box.dataset.link='';
+    box.innerHTML='<div style="width:100%;height:100%;display:grid;place-items:center;background:#eef2f5;color:#071827;font-weight:1000;font-size:1.35vw">QR</div>';
     if(label)label.textContent='QR BIENTÔT DISPONIBLE';
     const sub=card.querySelector('.journey-qr-sub');if(sub)sub.textContent='Le code public est en cours de création. La TV se mettra à jour automatiquement.';
     return;
