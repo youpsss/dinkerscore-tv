@@ -598,20 +598,70 @@ function updateJourneyQr(d){
   const box=document.getElementById('journeyQrCode');
   const label=document.getElementById('journeyQrCodeText');
   if(!card||!box)return;
-  const code=String(d.tournamentCode||'').trim();
-  const link=String(d.viewerDeepLink||'').trim();
-  if(!code||!link){card.classList.remove('visible');card.classList.remove('pending');box.innerHTML='';if(label)label.textContent='';return;}
-  card.classList.remove('pending');
-  card.classList.add('visible');
-  if(label)label.textContent=code;
-  if(box.dataset.link===link)return;
-  box.dataset.link=link;box.innerHTML='';
-  try{
-    if(typeof QRCode==='function'){new QRCode(box,{text:link,width:220,height:220,colorDark:'#071827',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}
-    else box.innerHTML='<div style="font:900 11px Arial;text-align:center;padding:8px">'+esc(code)+'</div>';
-  }catch(e){box.innerHTML='<div style="font:900 11px Arial;text-align:center;padding:8px">'+esc(code)+'</div>';}
-}
 
+  const code=String(d.tournamentCode||'').trim();
+  const providedLink=String(d.viewerDeepLink||'').trim();
+  const link=providedLink || (code ? ('dinkerscore://tournament/'+encodeURIComponent(code)) : '');
+  const qrData=String(d.viewerQrDataUrl||'').trim();
+
+  // Le téléphone génère déjà un PNG QR en data URL : c'est la source prioritaire.
+  // Cela évite de dépendre du chargement d'une bibliothèque QR externe sur la TV.
+  if(!code && !link && !qrData){
+    card.classList.remove('visible');
+    card.classList.remove('pending');
+    box.innerHTML='';
+    box.dataset.link='';
+    if(label)label.textContent='';
+    return;
+  }
+
+  card.classList.add('visible');
+  card.classList.remove('pending');
+  if(label)label.textContent=code;
+
+  const cacheKey=qrData ? ('data:'+qrData.length+':'+code) : ('link:'+link);
+  if(box.dataset.link===cacheKey && box.querySelector('img,canvas')) return;
+
+  box.innerHTML='';
+  box.dataset.link='';
+
+  if(qrData){
+    const img=document.createElement('img');
+    img.alt='QR parcours joueur';
+    img.src=qrData;
+    img.style.width='100%';
+    img.style.height='100%';
+    img.style.objectFit='contain';
+    img.onload=()=>{box.dataset.link=cacheKey;};
+    img.onerror=()=>{box.innerHTML='';renderQrFallback();};
+    box.appendChild(img);
+    return;
+  }
+
+  renderQrFallback();
+
+  function renderQrFallback(){
+    if(!link){
+      box.innerHTML='<div style="font:900 11px Arial;text-align:center;padding:8px">'+esc(code||'QR')+'</div>';
+      return;
+    }
+    try{
+      if(typeof QRCode==='function'){
+        new QRCode(box,{text:link,width:220,height:220,colorDark:'#071827',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+        if(box.querySelector('img,canvas')) box.dataset.link=cacheKey;
+      }else{
+        const img=document.createElement('img');
+        img.alt='QR parcours joueur';
+        img.src='https://api.qrserver.com/v1/create-qr-code/?size=260x260&data='+encodeURIComponent(link);
+        img.onload=()=>{box.dataset.link=cacheKey;};
+        img.onerror=()=>{box.innerHTML='<div style="font:900 11px Arial;text-align:center;padding:8px">'+esc(code||'QR')+'</div>';};
+        box.appendChild(img);
+      }
+    }catch(e){
+      box.innerHTML='<div style="font:900 11px Arial;text-align:center;padding:8px">'+esc(code||'QR')+'</div>';
+    }
+  }
+}
 function showTournamentScreen(d){
   updateJourneyQr(d);
   const fm=findFinalMatch(d);
