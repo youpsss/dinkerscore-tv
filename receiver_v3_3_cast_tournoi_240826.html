@@ -35,14 +35,7 @@
     var __dsCtx = cast.framework.CastReceiverContext.getInstance();
     __dsCtx.addCustomMessageListener(window.__dsScoreNamespace, window.__dsEarlyListener);
     __dsCtx.addCustomMessageListener(window.__dsTournamentNamespace, window.__dsEarlyListener);
-    var __dsOptions = new cast.framework.CastReceiverOptions();
-    __dsOptions.disableIdleTimeout = true;
-    // Multi-TV DinkerScore : une TV associée doit rester active même quand le téléphone
-    // quitte sa session sender pour aller sélectionner une autre TV.
-    // Le SDK déclenche normalement SENDER_DISCONNECTED après une période sans sender ;
-    // on prolonge cette fenêtre pour la durée d'un tournoi complet.
-    __dsOptions.maxInactivity = 43200; // 12 h
-    __dsCtx.start(__dsOptions);
+    __dsCtx.start({disableIdleTimeout:true});
     window.__dsReceiverStarted=true;
   } catch(e) {
     window.__dsReceiverBootError = String(e && e.message ? e.message : e);
@@ -135,7 +128,7 @@
   
     /* V2.9.63 : QR gratuit vers le parcours personnel du joueur. */
     .journey-qr{position:fixed;right:1.5vw;bottom:1.4vh;z-index:45;display:none;grid-template-columns:auto 1fr;align-items:center;gap:.7vw;padding:.65vh .65vw;background:rgba(255,255,255,.96);color:#071827;border:3px solid var(--gold);border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,.35);text-align:left}
-    .journey-qr.visible{display:grid}.journey-qr-code{width:7.8vw;height:7.8vw;display:grid;place-items:center;background:#fff;overflow:hidden}.journey-qr-code img,.journey-qr-code canvas{width:100%!important;height:100%!important}.journey-qr-title{font-size:.78vw;font-weight:1000;color:#071827;line-height:1.1;max-width:9.5vw}.journey-qr-sub{font-size:.62vw;font-weight:800;color:#4c5d6a;margin-top:.3vh;max-width:9.5vw}.journey-qr-code-text{font-size:.66vw;font-weight:1000;color:#071827;margin-top:.35vh;letter-spacing:.05em}
+    .journey-qr.visible{display:grid!important;opacity:1!important;visibility:visible!important}.journey-qr-code{width:7.8vw;height:7.8vw;display:grid;place-items:center;background:#fff;overflow:hidden}.journey-qr-code img,.journey-qr-code canvas{width:100%!important;height:100%!important}.journey-qr-title{font-size:.78vw;font-weight:1000;color:#071827;line-height:1.1;max-width:9.5vw}.journey-qr-sub{font-size:.62vw;font-weight:800;color:#4c5d6a;margin-top:.3vh;max-width:9.5vw}.journey-qr-code-text{font-size:.66vw;font-weight:1000;color:#071827;margin-top:.35vh;letter-spacing:.05em}
   
     /* V3.3 CARROUSEL TV : une information majeure par écran, rotation toutes les 8 secondes. */
     .carousel-screen{position:fixed;inset:0;z-index:25;display:none;background:linear-gradient(180deg,#061624 0,#020a11 100%);color:#fff;padding:3.2vh 3.4vw 4.4vh;grid-template-rows:auto 1fr auto;gap:2vh}
@@ -358,19 +351,6 @@ function processTournamentPayload(raw){
 }
 
 const ctx=window.__dsCtx || cast.framework.CastReceiverContext.getInstance();
-// Multi-TV persistant : si le sender Android se détache, ne pas quitter le mode tournoi.
-// Le polling Firestore reste la source de vérité de cet écran.
-try {
-  ctx.addEventListener(cast.framework.system.EventType.SENDER_DISCONNECTED, function(){
-    if(dsMultiTvDisplayId){
-      activeDisplayMode='tournament';
-      tournamentModeActive=true;
-      setTimeout(dsStartMultiTvPolling, 250);
-      console.log('Multi-TV: sender déconnecté, receiver conservé actif');
-    }
-  });
-} catch(e){ console.warn('Multi-TV sender disconnect listener', e); }
-
 let previousServingTeam=null;
 let tournamentProgramTimer=null;
 let tournamentProgramPage=0;
@@ -530,6 +510,7 @@ function showBracketScreen(d){
 
 
 let carouselTimer=null, carouselIndex=0, carouselSlides=[], latestTournamentData=null;
+let tournamentRotationPaused=false;
 function stopCarousel(){if(carouselTimer){clearInterval(carouselTimer);carouselTimer=null;}}
 function chunks(arr,n){const out=[];for(let i=0;i<arr.length;i+=n)out.push(arr.slice(i,i+n));return out;}
 function eventLabel(m){return esc(m.event||'Épreuve principale')}
@@ -607,7 +588,7 @@ function buildCarouselSlides(d){
   return selected;
 }
 function renderCarousel(){const s=carouselSlides[carouselIndex%carouselSlides.length];const sec=Math.max(3,Math.min(60,Number(latestTournamentData?.multiTvRotationSeconds||5)));cvTitle.textContent=s.title;cvSub.textContent=s.sub||'';cvBody.innerHTML=s.html;cvPage.textContent=`Écran ${carouselIndex%carouselSlides.length+1} / ${carouselSlides.length} • ${sec} s`;cvFooter.textContent=`${latestTournamentData?.tournamentName||'Tournoi'} • ${latestTournamentData?.kLevel||''} • DinkerScore`;cvDots.textContent=carouselSlides.map((_,i)=>i===carouselIndex%carouselSlides.length?'●':'○').slice(0,12).join(' ');}
-function showCarouselScreen(d){latestTournamentData=d;updateJourneyQr(d);stopBracketRotation();stopTournamentProgramRotation();stopTournamentPoolRotation();hideSpecialTournamentScreens();document.body.classList.remove('tournament-mode');winner.style.display='none';const screen=document.getElementById('carouselScreen');screen.classList.add('active');carouselSlides=buildCarouselSlides(d);if(carouselIndex>=carouselSlides.length)carouselIndex=0;renderCarousel();stopCarousel();if(carouselSlides.length>1){const sec=Math.max(3,Math.min(60,Number(d.multiTvRotationSeconds||5)));carouselTimer=setInterval(()=>{carouselIndex=(carouselIndex+1)%carouselSlides.length;renderCarousel();},sec*1000);}}
+function showCarouselScreen(d){latestTournamentData=d;updateJourneyQr(d);stopBracketRotation();stopTournamentProgramRotation();stopTournamentPoolRotation();hideSpecialTournamentScreens();document.body.classList.remove('tournament-mode');winner.style.display='none';const screen=document.getElementById('carouselScreen');screen.classList.add('active');carouselSlides=buildCarouselSlides(d);if(carouselIndex>=carouselSlides.length)carouselIndex=0;renderCarousel();stopCarousel();if(!tournamentRotationPaused&&carouselSlides.length>1){const sec=Math.max(3,Math.min(60,Number(d.multiTvRotationSeconds||5)));carouselTimer=setInterval(()=>{carouselIndex=(carouselIndex+1)%carouselSlides.length;renderCarousel();},sec*1000);}}
 
 function updateJourneyQr(d){
   const card=document.getElementById('journeyQrCard');
@@ -673,60 +654,7 @@ function showTournamentScreen(d){
   tlUpdated.textContent='Mis à jour : '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 }
 
-// ===== DinkerScore Multi-TV V3.5 : pilotage cloud indépendant du Cast =====
-let dsMultiTvDisplayId = localStorage.getItem('dinkerscore_multi_tv_display_id') || '';
-let dsMultiTvApiKey = localStorage.getItem('dinkerscore_multi_tv_api_key') || '';
-let dsMultiTvProjectId = localStorage.getItem('dinkerscore_multi_tv_project_id') || 'dinkerscore';
-let dsMultiTvLastVersion = 0;
-let dsMultiTvLastConfigKey = '';
-let dsMultiTvPollTimer = null;
-function dsFirestoreValue(v){
-  if(!v||typeof v!=='object')return null;
-  if('stringValue' in v)return v.stringValue; if('integerValue' in v)return Number(v.integerValue); if('doubleValue' in v)return Number(v.doubleValue); if('booleanValue' in v)return !!v.booleanValue; if('timestampValue' in v)return v.timestampValue; if('nullValue' in v)return null;
-  if(v.arrayValue)return (v.arrayValue.values||[]).map(dsFirestoreValue);
-  if(v.mapValue){const o={};Object.entries(v.mapValue.fields||{}).forEach(([k,x])=>o[k]=dsFirestoreValue(x));return o;} return null;
-}
-function dsDecodeFirestoreDoc(doc){const out={};Object.entries((doc&&doc.fields)||{}).forEach(([k,v])=>out[k]=dsFirestoreValue(v));return out;}
-function dsApplyMultiTvView(raw,cfg){
-  const d=JSON.parse(JSON.stringify(raw||{})); const mode=String(cfg.viewMode||'AUTO').toUpperCase(); const filter=String(cfg.filterValue||'').trim();
-  d.multiTvView=mode; d.multiTvRotationSeconds=Math.max(3,Math.min(60,Number(cfg.rotationSeconds||8)));
-  const f=(arr,pred)=>Array.isArray(arr)?arr.filter(pred):[];
-  if(mode==='COURT'&&filter){const c=Number(filter),pred=m=>Number(m.court)===c; d.allMatches=f(d.allMatches,pred); d.currentMatches=f(d.currentMatches,pred); d.upcomingMatches=f(d.upcomingMatches,pred); d.bracket=f(d.bracket,pred); d.liveFinals=f(d.liveFinals,pred);}
-  if(mode==='POOL'&&filter){const pred=m=>String(m.pool||'')===filter; d.allMatches=f(d.allMatches,pred); d.currentMatches=f(d.currentMatches,pred); d.upcomingMatches=f(d.upcomingMatches,pred); d.poolRankings=(Array.isArray(d.poolRankings)?d.poolRankings:[]).filter(p=>String(p.pool||p.label||p.name||'')===filter); d.bracket=[];}
-  if(mode==='EVENT'&&filter){const pred=m=>String(m.event||'')===filter; d.allMatches=f(d.allMatches,pred); d.currentMatches=f(d.currentMatches,pred); d.upcomingMatches=f(d.upcomingMatches,pred); d.bracket=f(d.bracket,pred); d.liveFinals=f(d.liveFinals,pred);}
-  return d;
-}
-async function dsPollMultiTv(){
-  if(!dsMultiTvDisplayId||!dsMultiTvApiKey)return;
-  try{
-    const url=`https://firestore.googleapis.com/v1/projects/${encodeURIComponent(dsMultiTvProjectId)}/databases/(default)/documents/tvDisplays/${encodeURIComponent(dsMultiTvDisplayId)}?key=${encodeURIComponent(dsMultiTvApiKey)}`;
-    const r=await fetch(url,{cache:'no-store'});
-    if(!r.ok)return;
-    const cfg=dsDecodeFirestoreDoc(await r.json());
-    const ver=Number(cfg.payloadVersion||0), nonce=Number(cfg.commandNonce||0);
-    const mode=String(cfg.viewMode||'AUTO').toUpperCase();
-    const filter=String(cfg.filterValue||'').trim();
-    const rotation=Math.max(3,Math.min(60,Number(cfg.rotationSeconds||8)));
-    const configKey=[mode,filter,rotation,ver,nonce].join('|');
-    const currentMode=String(latestTournamentData&&latestTournamentData.multiTvView||'').toUpperCase();
-    const mustReapply=(configKey!==dsMultiTvLastConfigKey)||(mode!=='AUTO'&&currentMode!==mode);
-    if(ver>0&&mustReapply&&typeof cfg.payload==='string'&&cfg.payload){
-      dsMultiTvLastVersion=Math.max(ver,nonce);
-      dsMultiTvLastConfigKey=configKey;
-      try{
-        const raw=JSON.parse(cfg.payload),viewed=dsApplyMultiTvView(raw,cfg);
-        activeDisplayMode='tournament';
-        tournamentModeActive=true;
-        if(mode!=='AUTO') carouselIndex=0;
-        showTournamentScreen(viewed);
-      }catch(e){console.error('Multi-TV payload invalide',e);}
-    }
-  }catch(e){console.warn('Multi-TV poll',e);}
-}
-function dsStartMultiTvPolling(){if(dsMultiTvPollTimer)clearInterval(dsMultiTvPollTimer); if(!dsMultiTvDisplayId)return; dsPollMultiTv(); dsMultiTvPollTimer=setInterval(dsPollMultiTv,1800);}
-function dsPairMultiTv(d){dsMultiTvDisplayId=String(d.displayId||''); dsMultiTvApiKey=String(d.firestoreApiKey||''); dsMultiTvProjectId=String(d.firestoreProjectId||'dinkerscore'); if(!dsMultiTvDisplayId||!dsMultiTvApiKey)return; localStorage.setItem('dinkerscore_multi_tv_display_id',dsMultiTvDisplayId); localStorage.setItem('dinkerscore_multi_tv_api_key',dsMultiTvApiKey); localStorage.setItem('dinkerscore_multi_tv_project_id',dsMultiTvProjectId); localStorage.setItem('dinkerscore_multi_tv_persistent','1'); dsMultiTvLastVersion=0; dsMultiTvLastConfigKey=''; dsStartMultiTvPolling(); showTournamentScreen({type:'tournament_live',displayMode:'TOURNAMENT_LOADING',transferPending:true,tournamentName:'DinkerScore Multi-TV • '+String(d.pairCode||'TV')+' • associé',matchCount:0});}
-if(dsMultiTvDisplayId&&dsMultiTvApiKey)setTimeout(dsStartMultiTvPolling,1200);
-
+// ===== DinkerScore Cast classique stable : Multi-TV désactivé =====
 const handleDinkerScoreMessage=(event)=>{
   let d=event.data;
   if(typeof d==='string'){try{d=JSON.parse(d)}catch(e){console.error('DinkerScore JSON invalide',e,d);return}}
@@ -736,7 +664,20 @@ const handleDinkerScoreMessage=(event)=>{
   console.log('DinkerScore message reçu',d.type||d.messageType,d);
   const type=String(d.type||d.messageType||'').toLowerCase();
   if(type==='capture_request'){captureAndSendToSender(event.senderId,d);return;}
-  if(type==='multi_tv_pair'){dsPairMultiTv(d);return;}
+  if(type==='tournament_control'){
+    const action=String(d.action||'').toUpperCase();
+    if(action==='PAUSE_ROTATION'){
+      tournamentRotationPaused=true;
+      stopCarousel();stopTournamentProgramRotation();stopTournamentPoolRotation();stopBracketRotation();
+      const page=document.getElementById('cvPage');if(page)page.textContent=(page.textContent||'')+' • PAUSE';
+      return;
+    }
+    if(action==='RESUME_ROTATION'){
+      tournamentRotationPaused=false;
+      if(latestTournamentData) showTournamentScreen(latestTournamentData);
+      return;
+    }
+  }
 
   if(type==='tournament_transfer_begin'){
     activeDisplayMode='tournament';
