@@ -658,6 +658,7 @@ let dsMultiTvDisplayId = localStorage.getItem('dinkerscore_multi_tv_display_id')
 let dsMultiTvApiKey = localStorage.getItem('dinkerscore_multi_tv_api_key') || '';
 let dsMultiTvProjectId = localStorage.getItem('dinkerscore_multi_tv_project_id') || 'dinkerscore';
 let dsMultiTvLastVersion = 0;
+let dsMultiTvLastConfigKey = '';
 let dsMultiTvPollTimer = null;
 function dsFirestoreValue(v){
   if(!v||typeof v!=='object')return null;
@@ -677,10 +678,33 @@ function dsApplyMultiTvView(raw,cfg){
 }
 async function dsPollMultiTv(){
   if(!dsMultiTvDisplayId||!dsMultiTvApiKey)return;
-  try{const url=`https://firestore.googleapis.com/v1/projects/${encodeURIComponent(dsMultiTvProjectId)}/databases/(default)/documents/tvDisplays/${encodeURIComponent(dsMultiTvDisplayId)}?key=${encodeURIComponent(dsMultiTvApiKey)}`; const r=await fetch(url,{cache:'no-store'}); if(!r.ok)return; const cfg=dsDecodeFirestoreDoc(await r.json()); const ver=Number(cfg.payloadVersion||0), nonce=Number(cfg.commandNonce||0); if(ver>0&&(ver!==dsMultiTvLastVersion||nonce>dsMultiTvLastVersion)){dsMultiTvLastVersion=Math.max(ver,nonce); if(typeof cfg.payload==='string'&&cfg.payload){try{const raw=JSON.parse(cfg.payload),viewed=dsApplyMultiTvView(raw,cfg); activeDisplayMode='tournament'; tournamentModeActive=true; showTournamentScreen(viewed);}catch(e){console.error('Multi-TV payload invalide',e);}}}}catch(e){console.warn('Multi-TV poll',e);}
+  try{
+    const url=`https://firestore.googleapis.com/v1/projects/${encodeURIComponent(dsMultiTvProjectId)}/databases/(default)/documents/tvDisplays/${encodeURIComponent(dsMultiTvDisplayId)}?key=${encodeURIComponent(dsMultiTvApiKey)}`;
+    const r=await fetch(url,{cache:'no-store'});
+    if(!r.ok)return;
+    const cfg=dsDecodeFirestoreDoc(await r.json());
+    const ver=Number(cfg.payloadVersion||0), nonce=Number(cfg.commandNonce||0);
+    const mode=String(cfg.viewMode||'AUTO').toUpperCase();
+    const filter=String(cfg.filterValue||'').trim();
+    const rotation=Math.max(3,Math.min(60,Number(cfg.rotationSeconds||8)));
+    const configKey=[mode,filter,rotation,ver,nonce].join('|');
+    const currentMode=String(latestTournamentData&&latestTournamentData.multiTvView||'').toUpperCase();
+    const mustReapply=(configKey!==dsMultiTvLastConfigKey)||(mode!=='AUTO'&&currentMode!==mode);
+    if(ver>0&&mustReapply&&typeof cfg.payload==='string'&&cfg.payload){
+      dsMultiTvLastVersion=Math.max(ver,nonce);
+      dsMultiTvLastConfigKey=configKey;
+      try{
+        const raw=JSON.parse(cfg.payload),viewed=dsApplyMultiTvView(raw,cfg);
+        activeDisplayMode='tournament';
+        tournamentModeActive=true;
+        if(mode!=='AUTO') carouselIndex=0;
+        showTournamentScreen(viewed);
+      }catch(e){console.error('Multi-TV payload invalide',e);}
+    }
+  }catch(e){console.warn('Multi-TV poll',e);}
 }
 function dsStartMultiTvPolling(){if(dsMultiTvPollTimer)clearInterval(dsMultiTvPollTimer); if(!dsMultiTvDisplayId)return; dsPollMultiTv(); dsMultiTvPollTimer=setInterval(dsPollMultiTv,1800);}
-function dsPairMultiTv(d){dsMultiTvDisplayId=String(d.displayId||''); dsMultiTvApiKey=String(d.firestoreApiKey||''); dsMultiTvProjectId=String(d.firestoreProjectId||'dinkerscore'); if(!dsMultiTvDisplayId||!dsMultiTvApiKey)return; localStorage.setItem('dinkerscore_multi_tv_display_id',dsMultiTvDisplayId); localStorage.setItem('dinkerscore_multi_tv_api_key',dsMultiTvApiKey); localStorage.setItem('dinkerscore_multi_tv_project_id',dsMultiTvProjectId); dsMultiTvLastVersion=0; dsStartMultiTvPolling(); showTournamentScreen({type:'tournament_live',displayMode:'TOURNAMENT_LOADING',transferPending:true,tournamentName:'DinkerScore Multi-TV • '+String(d.pairCode||'TV')+' • associé',matchCount:0});}
+function dsPairMultiTv(d){dsMultiTvDisplayId=String(d.displayId||''); dsMultiTvApiKey=String(d.firestoreApiKey||''); dsMultiTvProjectId=String(d.firestoreProjectId||'dinkerscore'); if(!dsMultiTvDisplayId||!dsMultiTvApiKey)return; localStorage.setItem('dinkerscore_multi_tv_display_id',dsMultiTvDisplayId); localStorage.setItem('dinkerscore_multi_tv_api_key',dsMultiTvApiKey); localStorage.setItem('dinkerscore_multi_tv_project_id',dsMultiTvProjectId); dsMultiTvLastVersion=0; dsMultiTvLastConfigKey=''; dsStartMultiTvPolling(); showTournamentScreen({type:'tournament_live',displayMode:'TOURNAMENT_LOADING',transferPending:true,tournamentName:'DinkerScore Multi-TV • '+String(d.pairCode||'TV')+' • associé',matchCount:0});}
 if(dsMultiTvDisplayId&&dsMultiTvApiKey)setTimeout(dsStartMultiTvPolling,1200);
 
 const handleDinkerScoreMessage=(event)=>{
