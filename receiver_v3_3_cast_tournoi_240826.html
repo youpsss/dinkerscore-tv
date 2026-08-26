@@ -128,7 +128,7 @@
 
   
     /* V2.9.63 : QR gratuit vers le parcours personnel du joueur. */
-    .journey-qr{position:fixed;right:1.3vw;bottom:1.3vh;z-index:90;display:grid;grid-template-columns:auto 1fr;align-items:center;gap:.7vw;padding:.65vh .65vw;background:rgba(255,255,255,.96);color:#071827;border:3px solid var(--gold);border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,.35);text-align:left}
+    .journey-qr{position:fixed;right:1.3vw;bottom:1.3vh;z-index:90;display:none;grid-template-columns:auto 1fr;align-items:center;gap:.7vw;padding:.65vh .65vw;background:rgba(255,255,255,.96);color:#071827;border:3px solid var(--gold);border-radius:16px;box-shadow:0 8px 28px rgba(0,0,0,.35);text-align:left}
     .journey-qr.visible{display:grid!important;opacity:1!important;visibility:visible!important;transform:none!important}.journey-qr-code{width:7.8vw;height:7.8vw;display:grid;place-items:center;background:#fff;overflow:hidden}.journey-qr-code img,.journey-qr-code canvas{width:100%!important;height:100%!important}.journey-qr-title{font-size:.78vw;font-weight:1000;color:#071827;line-height:1.1;max-width:9.5vw}.journey-qr-sub{font-size:.62vw;font-weight:800;color:#4c5d6a;margin-top:.3vh;max-width:9.5vw}.journey-qr-code-text{font-size:.66vw;font-weight:1000;color:#071827;margin-top:.35vh;letter-spacing:.05em}
   
     /* V3.3 CARROUSEL TV : une information majeure par écran, rotation toutes les 8 secondes. */
@@ -259,7 +259,7 @@
     <footer class="cv-footer"><div id="cvFooter">DinkerScore • Scorez, Annoncez, Gagnez</div><div id="cvDots" class="cv-dots">● ○ ○</div></footer>
   </main>
 
-  <aside id="journeyQrCard" class="journey-qr visible pending" aria-label="QR code parcours personnel joueur">
+  <aside id="journeyQrCard" class="journey-qr" aria-label="QR code parcours personnel joueur">
     <div id="journeyQrCode" class="journey-qr-code"></div>
     <div><div class="journey-qr-title">📱 MON PARCOURS GRATUIT</div><div class="journey-qr-sub">Scanne pour voir tes matchs, ton terrain et ton classement en direct.</div><div id="journeyQrCodeText" class="journey-qr-code-text"></div></div>
   </aside>
@@ -599,28 +599,16 @@ function updateJourneyQr(d){
   const label=document.getElementById('journeyQrCodeText');
   if(!card||!box)return;
   const code=String(d.tournamentCode||'').trim();
-  const link=String(d.viewerDeepLink||'').trim();
-  const qrData=String(d.viewerQrDataUrl||'').trim();
-  if(!code||!link){card.classList.remove('visible');card.classList.remove('pending');box.innerHTML='';box.dataset.link='';if(label)label.textContent='';return;}
-  card.classList.remove('pending');
+  const link=String(d.viewerDeepLink||'').trim() || (code ? ('dinkerscore://tournament/'+encodeURIComponent(code)) : '');
+  if(!code||!link){card.classList.remove('visible');box.innerHTML='';box.dataset.link='';if(label)label.textContent='';return;}
   card.classList.add('visible');
   if(label)label.textContent=code;
   if(box.dataset.link===link && box.innerHTML.trim())return;
   box.dataset.link=link;box.innerHTML='';
-  // V3.6.6 QR ONLY : le PNG est généré par Android et voyage avec le payload.
-  // C'est la voie prioritaire : aucune dépendance réseau/CDN côté TV.
-  if(qrData){
-    const img=document.createElement('img');
-    img.alt='QR parcours joueur';
-    img.src=qrData;
-    img.style.width='100%';img.style.height='100%';img.style.objectFit='contain';
-    box.appendChild(img);
-    return;
-  }
   try{
     if(typeof QRCode==='function'){new QRCode(box,{text:link,width:220,height:220,colorDark:'#071827',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}
-    else box.innerHTML='<div style="font:900 11px Arial;text-align:center;padding:8px">'+esc(code)+'</div>';
-  }catch(e){box.innerHTML='<div style="font:900 11px Arial;text-align:center;padding:8px">'+esc(code)+'</div>';}
+    else box.innerHTML='<img alt="QR parcours joueur" src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(link)+'">';
+  }catch(e){box.innerHTML='<img alt="QR parcours joueur" src="https://api.qrserver.com/v1/create-qr-code/?size=220x220&data='+encodeURIComponent(link)+'">';}
 }
 
 function showTournamentScreen(d){
@@ -690,6 +678,17 @@ const handleDinkerScoreMessage=(event)=>{
       }
       return;
     }
+  }
+
+  if(type==='tournament_qr'){
+    const code=String(d.tournamentCode||'').trim();
+    const link=String(d.viewerDeepLink||'').trim() || (code?('dinkerscore://tournament/'+encodeURIComponent(code)):'');
+    if(code&&link){
+      latestTournamentData={...(latestTournamentData||{}),tournamentCode:code,viewerDeepLink:link};
+      updateJourneyQr({tournamentCode:code,viewerDeepLink:link});
+      console.log('QR tournoi reçu',code);
+    }
+    return;
   }
 
   if(type==='tournament_transfer_begin'){
