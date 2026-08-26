@@ -8,6 +8,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>DinkerScore TV</title>
   <script src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script>
   // DinkerScore V3.3 - listener Cast initialise AVANT toute l'interface.
   window.__dsPendingMessages = [];
@@ -579,8 +580,10 @@ function buildCarouselSlides(d){
   if(finals.length)chunks(finals,4).forEach(g=>slides.unshift({title:'FINALES EN DIRECT',sub:`${g.length} finale(s) simultanée(s)`,html:`<div class="cv-grid four">${g.map(matchCard).join('')}</div>`}));
   const mv=String(d.multiTvView||'AUTO').toUpperCase();
   let selected=slides;
-  if(mv==='ALL_POOLS') selected=slides.filter(x=>x.title.startsWith('CLASSEMENTS DES POULES'));
+  if(mv==='CURRENT') selected=slides.filter(x=>x.title.startsWith('MATCHS EN COURS'));
+  else if(mv==='ALL_POOLS') selected=slides.filter(x=>x.title.startsWith('CLASSEMENTS DES POULES'));
   else if(mv==='RESULTS') selected=slides.filter(x=>x.title.startsWith('DERNIERS RÉSULTATS')||x.title.startsWith('RÉSULTATS'));
+  else if(mv==='UPCOMING') selected=slides.filter(x=>x.title.startsWith('PROCHAINS MATCHS'));
   else if(mv==='BRACKETS') selected=slides.filter(x=>x.title.includes('TABLEAU')||x.title.includes('CLASSEMENT •'));
   else if(mv==='FINALS') selected=slides.filter(x=>x.title.startsWith('FINALES EN DIRECT'));
   if(!selected.length) selected=slides;
@@ -596,33 +599,17 @@ function updateJourneyQr(d){
   const label=document.getElementById('journeyQrCodeText');
   if(!card||!box)return;
   const code=String(d.tournamentCode||'').trim();
-  const providedLink=String(d.viewerDeepLink||'').trim();
-  // Le QR ne dépend plus de viewerDeepLink : si le code public existe,
-  // le receiver reconstruit lui-même le lien DinkerScore.
-  const link=providedLink || (code ? ('dinkerscore://tournament/'+encodeURIComponent(code)) : '');
-  const qrData=String(d.viewerQrDataUrl||'').trim();
-  card.classList.add('visible');
-  if(!code||!link){
-    card.classList.add('pending');
-    box.dataset.link='';
-    box.innerHTML='<div style="width:100%;height:100%;display:grid;place-items:center;background:#eef2f5;color:#071827;font-weight:1000;font-size:1.35vw">QR</div>';
-    if(label)label.textContent='QR BIENTÔT DISPONIBLE';
-    const sub=card.querySelector('.journey-qr-sub');if(sub)sub.textContent='Le code public est en cours de création. La TV se mettra à jour automatiquement.';
-    return;
-  }
+  const link=String(d.viewerDeepLink||'').trim();
+  if(!code||!link){card.classList.remove('visible');card.classList.remove('pending');box.innerHTML='';if(label)label.textContent='';return;}
   card.classList.remove('pending');
-  const sub=card.querySelector('.journey-qr-sub');if(sub)sub.textContent='Scanne pour voir tes matchs, ton terrain et ton classement en direct.';
+  card.classList.add('visible');
   if(label)label.textContent=code;
-  if(box.dataset.link===link && box.innerHTML.trim())return;
+  if(box.dataset.link===link)return;
   box.dataset.link=link;box.innerHTML='';
-  if(qrData){
-    box.innerHTML='<img alt="QR parcours joueur" src="'+qrData+'">';
-    return;
-  }
   try{
-    if(typeof QRCode==='function'){new QRCode(box,{text:link,width:260,height:260,colorDark:'#071827',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}
-    else box.innerHTML='<img alt="QR parcours joueur" src="https://api.qrserver.com/v1/create-qr-code/?size=260x260&data='+encodeURIComponent(link)+'">';
-  }catch(e){box.innerHTML='<img alt="QR parcours joueur" src="https://api.qrserver.com/v1/create-qr-code/?size=260x260&data='+encodeURIComponent(link)+'">';}
+    if(typeof QRCode==='function'){new QRCode(box,{text:link,width:220,height:220,colorDark:'#071827',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});}
+    else box.innerHTML='<div style="font:900 11px Arial;text-align:center;padding:8px">'+esc(code)+'</div>';
+  }catch(e){box.innerHTML='<div style="font:900 11px Arial;text-align:center;padding:8px">'+esc(code)+'</div>';}
 }
 
 function showTournamentScreen(d){
@@ -678,7 +665,18 @@ const handleDinkerScoreMessage=(event)=>{
     }
     if(action==='RESUME_ROTATION'){
       tournamentRotationPaused=false;
-      if(latestTournamentData) showTournamentScreen(latestTournamentData);
+      if(latestTournamentData) { latestTournamentData={...latestTournamentData,multiTvView:'AUTO'}; showTournamentScreen(latestTournamentData); }
+      return;
+    }
+    if(action==='SELECT_VIEW'){
+      const viewMode=String(d.viewMode||'AUTO').toUpperCase();
+      tournamentRotationPaused=true;
+      stopCarousel();stopTournamentProgramRotation();stopTournamentPoolRotation();stopBracketRotation();
+      if(latestTournamentData){
+        latestTournamentData={...latestTournamentData,multiTvView:viewMode,displayMode:'BRACKETS'};
+        showCarouselScreen(latestTournamentData);
+        stopCarousel();
+      }
       return;
     }
   }
