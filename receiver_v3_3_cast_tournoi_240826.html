@@ -578,7 +578,7 @@ function buildCarouselSlides(d){
   if(finals.length)chunks(finals,4).forEach(g=>slides.unshift({title:'FINALES EN DIRECT',sub:`${g.length} finale(s) simultanée(s)`,html:`<div class="cv-grid four">${g.map(matchCard).join('')}</div>`}));
   const mv=String(d.multiTvView||'AUTO').toUpperCase();
   let selected=slides;
-  if(mv==='ALL_POOLS') selected=slides.filter(x=>x.title.startsWith('CLASSEMENTS DES POULES'));
+  if(mv==='ALL_POOLS'||mv==='POOL') selected=slides.filter(x=>x.title.startsWith('CLASSEMENTS DES POULES'));
   else if(mv==='RESULTS') selected=slides.filter(x=>x.title.startsWith('DERNIERS RÉSULTATS')||x.title.startsWith('RÉSULTATS'));
   else if(mv==='BRACKETS') selected=slides.filter(x=>x.title.includes('TABLEAU')||x.title.includes('CLASSEMENT •'));
   else if(mv==='FINALS') selected=slides.filter(x=>x.title.startsWith('FINALES EN DIRECT'));
@@ -587,7 +587,7 @@ function buildCarouselSlides(d){
   return selected;
 }
 function renderCarousel(){const s=carouselSlides[carouselIndex%carouselSlides.length];const sec=Math.max(3,Math.min(60,Number(latestTournamentData?.multiTvRotationSeconds||5)));cvTitle.textContent=s.title;cvSub.textContent=s.sub||'';cvBody.innerHTML=s.html;cvPage.textContent=`Écran ${carouselIndex%carouselSlides.length+1} / ${carouselSlides.length} • ${sec} s`;cvFooter.textContent=`${latestTournamentData?.tournamentName||'Tournoi'} • ${latestTournamentData?.kLevel||''} • DinkerScore`;cvDots.textContent=carouselSlides.map((_,i)=>i===carouselIndex%carouselSlides.length?'●':'○').slice(0,12).join(' ');}
-function showCarouselScreen(d){latestTournamentData=d;updateJourneyQr(d);stopBracketRotation();stopTournamentProgramRotation();stopTournamentPoolRotation();hideSpecialTournamentScreens();document.body.classList.remove('tournament-mode');winner.style.display='none';const screen=document.getElementById('carouselScreen');screen.classList.add('active');carouselSlides=buildCarouselSlides(d);if(carouselIndex>=carouselSlides.length)carouselIndex=0;renderCarousel();stopCarousel();if(carouselSlides.length>1){const sec=Math.max(3,Math.min(60,Number(d.multiTvRotationSeconds||5)));carouselTimer=setInterval(()=>{carouselIndex=(carouselIndex+1)%carouselSlides.length;renderCarousel();},sec*1000);}}
+function showCarouselScreen(d){latestTournamentData=d;document.body.classList.add('tournament-mode');finalScreen.classList.remove('active');championScreen.classList.remove('active');const bs=document.getElementById('bracketScreen');if(bs)bs.classList.remove('active');carouselScreen.classList.add('active');carouselSlides=buildCarouselSlides(d);if(carouselIndex>=carouselSlides.length)carouselIndex=0;renderCarousel();stopCarousel();const multiTvMode=String(d&&d.multiTvView||'AUTO').toUpperCase();if(multiTvMode==='AUTO'&&carouselSlides.length>1){const sec=Math.max(3,Math.min(60,Number(d.multiTvRotationSeconds||5)));carouselTimer=setInterval(()=>{carouselIndex=(carouselIndex+1)%carouselSlides.length;renderCarousel();},sec*1000);}}
 
 function updateJourneyQr(d){
   const card=document.getElementById('journeyQrCard');
@@ -649,11 +649,66 @@ function showTournamentScreen(d){
   startTournamentProgramRotation(allMatches);
   const bracket=Array.isArray(d.bracket)?d.bracket:[];
   tlBracket.innerHTML=bracket.length?bracket.map(b=>`<div><strong>${esc(b.bracket==='LOWER'?'TABLEAU BAS':b.bracket==='UPPER'?'TABLEAU HAUT':b.phase||b.round||'')}</strong> • ${esc(b.event?b.event+' • ':'')}${esc(b.teamA||'')} vs ${esc(b.teamB||'')} • ${esc(b.bestOfSets||1)} set(s) × ${esc(b.pointsPerSet||d.pointsToWin||11)} pts</div>`).join(''):'<div>Les tableaux haut et bas apparaîtront ici automatiquement.</div>';
-  tlFooterLeft.textContent=(d.location?`${d.tournamentName||'Tournoi'} • ${d.location}`:'DinkerScore • Tournoi Live')+' • '+(d.kLevel||'K25')+' • TV 3.5 MULTI-TV';
+  tlFooterLeft.textContent=(d.location?`${d.tournamentName||'Tournoi'} • ${d.location}`:'DinkerScore • Tournoi Live')+' • '+(d.kLevel||'K25')+' • TV 3.6.1 MULTI-TV AUTO';
   tlUpdated.textContent='Mis à jour : '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 }
 
-// ===== DinkerScore Cast classique stable : Multi-TV désactivé =====
+// ===== DinkerScore Multi-TV V3.6.1 AUTO : pilotage cloud indépendant du Cast =====
+let dsMultiTvDisplayId = localStorage.getItem('dinkerscore_multi_tv_display_id') || '';
+let dsMultiTvApiKey = localStorage.getItem('dinkerscore_multi_tv_api_key') || '';
+let dsMultiTvProjectId = localStorage.getItem('dinkerscore_multi_tv_project_id') || 'dinkerscore';
+let dsMultiTvLastVersion = 0;
+let dsMultiTvLastConfigKey = '';
+let dsMultiTvPollTimer = null;
+function dsFirestoreValue(v){
+  if(!v||typeof v!=='object')return null;
+  if('stringValue' in v)return v.stringValue; if('integerValue' in v)return Number(v.integerValue); if('doubleValue' in v)return Number(v.doubleValue); if('booleanValue' in v)return !!v.booleanValue; if('timestampValue' in v)return v.timestampValue; if('nullValue' in v)return null;
+  if(v.arrayValue)return (v.arrayValue.values||[]).map(dsFirestoreValue);
+  if(v.mapValue){const o={};Object.entries(v.mapValue.fields||{}).forEach(([k,x])=>o[k]=dsFirestoreValue(x));return o;} return null;
+}
+function dsDecodeFirestoreDoc(doc){const out={};Object.entries((doc&&doc.fields)||{}).forEach(([k,v])=>out[k]=dsFirestoreValue(v));return out;}
+function dsApplyMultiTvView(raw,cfg){
+  const d=JSON.parse(JSON.stringify(raw||{})); const mode=String(cfg.viewMode||'AUTO').toUpperCase(); const filter=String(cfg.filterValue||'').trim();
+  d.multiTvView=mode; d.multiTvRotationSeconds=Math.max(3,Math.min(60,Number(cfg.rotationSeconds||8)));
+  const f=(arr,pred)=>Array.isArray(arr)?arr.filter(pred):[];
+  if(mode==='COURT'&&filter){const c=Number(filter),pred=m=>Number(m.court)===c; d.allMatches=f(d.allMatches,pred); d.currentMatches=f(d.currentMatches,pred); d.upcomingMatches=f(d.upcomingMatches,pred); d.bracket=f(d.bracket,pred); d.liveFinals=f(d.liveFinals,pred);}
+  if(mode==='POOL'&&filter){const pred=m=>String(m.pool||'')===filter; d.allMatches=f(d.allMatches,pred); d.currentMatches=f(d.currentMatches,pred); d.upcomingMatches=f(d.upcomingMatches,pred); d.poolRankings=(Array.isArray(d.poolRankings)?d.poolRankings:[]).filter(p=>String(p.pool||p.label||p.name||'')===filter); d.bracket=[];}
+  if(mode==='EVENT'&&filter){const pred=m=>String(m.event||'')===filter; d.allMatches=f(d.allMatches,pred); d.currentMatches=f(d.currentMatches,pred); d.upcomingMatches=f(d.upcomingMatches,pred); d.bracket=f(d.bracket,pred); d.liveFinals=f(d.liveFinals,pred);}
+  return d;
+}
+async function dsPollMultiTv(){
+  if(!dsMultiTvDisplayId||!dsMultiTvApiKey)return;
+  try{
+    const url=`https://firestore.googleapis.com/v1/projects/${encodeURIComponent(dsMultiTvProjectId)}/databases/(default)/documents/tvDisplays/${encodeURIComponent(dsMultiTvDisplayId)}?key=${encodeURIComponent(dsMultiTvApiKey)}`;
+    const r=await fetch(url,{cache:'no-store'});
+    if(!r.ok)return;
+    const cfg=dsDecodeFirestoreDoc(await r.json());
+    const ver=Number(cfg.payloadVersion||0), nonce=Number(cfg.commandNonce||0);
+    const mode=String(cfg.viewMode||'AUTO').toUpperCase();
+    const filter=String(cfg.filterValue||'').trim();
+    const rotation=Math.max(3,Math.min(60,Number(cfg.rotationSeconds||8)));
+    const configKey=[mode,filter,rotation,ver,nonce].join('|');
+    const currentMode=String(latestTournamentData&&latestTournamentData.multiTvView||'').toUpperCase();
+    const mustReapply=(configKey!==dsMultiTvLastConfigKey)||(mode!=='AUTO'&&currentMode!==mode);
+    if(ver>0&&mustReapply&&typeof cfg.payload==='string'&&cfg.payload){
+      dsMultiTvLastVersion=Math.max(ver,nonce);
+      dsMultiTvLastConfigKey=configKey;
+      try{
+        const raw=JSON.parse(cfg.payload),viewed=dsApplyMultiTvView(raw,cfg);
+        activeDisplayMode='tournament';
+        tournamentModeActive=true;
+        if(mode!=='AUTO') carouselIndex=0;
+        showTournamentScreen(viewed);
+      }catch(e){console.error('Multi-TV payload invalide',e);}
+    }
+  }catch(e){console.warn('Multi-TV poll',e);}
+}
+function dsStartMultiTvPolling(){if(dsMultiTvPollTimer)clearInterval(dsMultiTvPollTimer); if(!dsMultiTvDisplayId)return; dsPollMultiTv(); dsMultiTvPollTimer=setInterval(dsPollMultiTv,1800);}
+function dsStopMultiTvPolling(){if(dsMultiTvPollTimer){clearInterval(dsMultiTvPollTimer);dsMultiTvPollTimer=null;} dsMultiTvLastConfigKey='';}
+function dsPairMultiTv(d){dsMultiTvDisplayId=String(d.displayId||''); dsMultiTvApiKey=String(d.firestoreApiKey||''); dsMultiTvProjectId=String(d.firestoreProjectId||'dinkerscore'); if(!dsMultiTvDisplayId||!dsMultiTvApiKey)return; localStorage.setItem('dinkerscore_multi_tv_display_id',dsMultiTvDisplayId); localStorage.setItem('dinkerscore_multi_tv_api_key',dsMultiTvApiKey); localStorage.setItem('dinkerscore_multi_tv_project_id',dsMultiTvProjectId); dsMultiTvLastVersion=0; dsMultiTvLastConfigKey=''; dsStartMultiTvPolling(); showTournamentScreen({type:'tournament_live',displayMode:'TOURNAMENT_LOADING',transferPending:true,tournamentName:'DinkerScore Multi-TV • écran associé',matchCount:0});}
+// V3.6.1 : pas de reprise automatique d'une ancienne association au redémarrage du receiver.
+// Le polling démarre uniquement après l'association explicite de la TV courante.
+
 const handleDinkerScoreMessage=(event)=>{
   let d=event.data;
   if(typeof d==='string'){try{d=JSON.parse(d)}catch(e){console.error('DinkerScore JSON invalide',e,d);return}}
@@ -663,8 +718,10 @@ const handleDinkerScoreMessage=(event)=>{
   console.log('DinkerScore message reçu',d.type||d.messageType,d);
   const type=String(d.type||d.messageType||'').toLowerCase();
   if(type==='capture_request'){captureAndSendToSender(event.senderId,d);return;}
+  if(type==='multi_tv_pair'){dsPairMultiTv(d);return;}
 
   if(type==='tournament_transfer_begin'){
+    dsStopMultiTvPolling();
     activeDisplayMode='tournament';
     document.body.classList.add('tournament-mode');
     const __cs=document.getElementById('carouselScreen');
@@ -700,6 +757,7 @@ const handleDinkerScoreMessage=(event)=>{
     return;
   }
   if(type==='score_mode'||type==='tournament_closed'){
+    dsStopMultiTvPolling();
     activeDisplayMode='score';
     tournamentModeActive=false;
     tournamentTransfers.clear();
@@ -708,6 +766,7 @@ const handleDinkerScoreMessage=(event)=>{
     return;
   }
   if(type==='tournament_live'||type==='tournament'||type==='tournamentlive'){
+    dsStopMultiTvPolling();
     activeDisplayMode='tournament';
     tournamentModeActive=true;
     showTournamentScreen(d);
